@@ -1,0 +1,4 @@
+    No.         average_value   max_value
+ replica0       0.742           0.822
+ replica1       0.760           0.929
+ replica2       0.824           1.043
