@@ -1,0 +1,5 @@
+Replica_No. Average_value    Max_value
+Replica-0      495.870      627.357
+Replica-1      358.937      489.351
+Replica-2      415.974      548.664
+  Average      423.594      555.124

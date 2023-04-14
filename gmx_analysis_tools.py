@@ -79,8 +79,8 @@ class merger():
             self.sasa_res_averager(file1, file2, file3,renumber,ave)
         elif self.flag == 'gyrate':
             self.gyrate_averager(file1, file2,file3, ave)
-        #elif self.flag == 'dipoles':
-            #self.dipoles_averager(file1, file2,file3, ave)
+        elif self.flag == 'dipoles':
+            self.dipoles_averager(file1, file2,file3, ave)
         
     def flag_recognizer(self,file1, file2, file3):                                                   # first method to be called in __main__, used for creating object and charactors.
         #self.atomic_index.clear()                                                   # cleaveage the information of previous object before put new record into these charactors
@@ -96,8 +96,8 @@ class merger():
                     self.flag = 'sasa'
                 elif self.flag == 'gyrate,':
                     self.flag = 'gyrate'
-                #elif self.flag == 'dipoles,':
-                    #self.flag = 'dipoles'
+                elif self.flag == 'dipoles,':
+                    self.flag = 'dipoles'
             if len(lines) >= 9 and '-or' in lines[8]:
                 self.sasa_flag = '-or'
                 
@@ -348,6 +348,8 @@ class merger():
         for i in [self.values1, self.values2, self.values3]:
             self.max_value.append(max(i))
             self.average_value.append(sum(i)/len(i))
+        
+        # output the average and max values
         with open('gyration_ave_max.txt', 'w') as w:
             w.write("%9s %12s %12s" %  ("Replica_No.", "Average_value", "Max_value"))
             for i in range(3):
@@ -364,6 +366,81 @@ class merger():
         if ave == 'true':
             data.append(["Average", sum(self.average_value)/len(self.average_value), sum(self.max_value)/len(self.max_value)])
         with open('gyration_ave_max.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerows(data)
+                       
+        # output the timeseries values
+        with open("gyration_raw_values.txt", 'w') as w:
+            w.write("%9s %12s %12s %12s" % ("Time", "Replica1", "Replica2", "Replica3"))
+            for i in range(len(self.values1)):
+                w.write('\n')
+                w.write("%4d %12.3f %12.3f %12.3f" %  (self.time1[i], self.values1[i], self.values2[i], self.values3[i]))    
+        
+        data = [["Time", "Replica1", "Replica2", "Replica3"]]
+        for i in range(len(self.time1)):
+            data.append([self.time1[i], self.values1[i], self.values2[i], self.values3[i]])
+        with open('gyration_raw_values.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerows(data)
+            
+    def dipoles_averager(self, file1, file2, file3, ave):
+        a = 27
+        with open(file1, 'r') as f:
+            lines = f.readlines() 
+            for i in range(len(lines)):
+                if i >= a:
+                    #print(lines[i])
+                    self.time1.append(float(lines[i].split()[0]))
+                    self.values1.append(float(lines[i].split()[4]))
+        with open(file2, 'r') as f:
+            lines = f.readlines() 
+            for i in range(len(lines)):
+                if i >= a:
+                    #print(lines[i])
+                    self.time2.append(float(lines[i].split()[0]))
+                    self.values2.append(float(lines[i].split()[4]))
+        with open(file3, 'r') as f:
+            lines = f.readlines() 
+            for i in range(len(lines)):
+                if i >= a:
+                    #print(lines[i])
+                    self.time3.append(float(lines[i].split()[0]))
+                    self.values3.append(float(lines[i].split()[4]))
+                    
+        for i in [self.values1, self.values2, self.values3]:
+            self.max_value.append(max(i))
+            self.average_value.append(sum(i)/len(i))
+        # output the average and max dipoles value.
+        with open('dipoles_ave_max.txt', 'w') as w:
+            w.write("%9s %12s %12s" %  ("Replica_No.", "Average_value", "Max_value"))
+            for i in range(3):
+               # w.write(f"\n replica{i}    {self.average_value[i]:-8.3f}{self.max_value[i]:16.3f}")
+               w.write('\n')
+               w.write("%9s %12.3f %12.3f" %  ("Replica-"+str(i), self.average_value[i], self.max_value[i]))
+            if ave == 'true':
+                w.write('\n')
+                w.write("%9s %12.3f %12.3f" % ("Average", sum(self.average_value)/len(self.average_value), sum(self.max_value)/len(self.max_value)))
+        
+        data = [["Replica_No.", "Average_value", "Max_value"]]
+        for i in range(len(self.max_value)):
+            data.append([i, self.average_value[i], self.max_value[i]])
+        if ave == 'true':
+            data.append(["Average", sum(self.average_value)/len(self.average_value), sum(self.max_value)/len(self.max_value)])
+        with open('dipoles_ave_max.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerows(data)
+        
+        # output the timeseries values
+        with open("dipoles_raw_values.txt", 'w') as w:
+            w.write("%9s %12s %12s %12s" % ("Time", "Replica1", "Replica2", "Replica3"))
+            for i in range(len(self.values1)):
+                w.write('\n')
+                w.write("%4d %12.3f %12.3f %12.3f" %  (self.time1[i], self.values1[i], self.values2[i], self.values3[i]))    
+        
+        data = [["Time", "Replica1", "Replica2", "Replica3"]]
+        for i in range(len(self.time1)):
+            data.append([self.time1[i], self.values1[i], self.values2[i], self.values3[i]])
+        with open('dipoles_raw_values.csv', 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerows(data)
             
