@@ -1,0 +1,25 @@
+# This file was created Sun Apr 16 03:01:32 2023
+# Created by:
+#                     :-) GROMACS - gmx distance, 2020.5 (-:
+# 
+# Executable:   /home/dozeduck/workspace/gromacs/gmx20205/bin/gmx
+# Data prefix:  /home/dozeduck/workspace/gromacs/gmx20205
+# Working dir:  /home/dozeduck/wip1-paper/complex-af-wip1/analysis/complex-af-wip1/pose1/replica2/md_noPBC54_top1
+# Command line:
+#   gmx distance -f md_noPBC54.pdb -s md_noPBC54.pdb -oav distance2.xvg -select 'com of group "Protein" plus com of group 13'
+# gmx distance is part of G R O M A C S:
+#
+# GROup of MAchos and Cynical Suckers
+#
+@    title "Average distance"
+@    xaxis  label "Time (ps)"
+@    yaxis  label "Distance (nm)"
+@TYPE xy
+@ view 0.15, 0.15, 0.75, 0.85
+@ legend on
+@ legend box on
+@ legend loctype view
+@ legend 0.78, 0.8
+@ legend length 2
+@ s0 legend "com of group "Protein" plus com of group 13"
+ 162000.000    1.784
