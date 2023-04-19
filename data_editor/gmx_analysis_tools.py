@@ -19,27 +19,31 @@ file2 = ''
 file3 = ''
 renumber = 'fault'
 ave = 'fault'
+rdf_cutoff = 4.7
 
 try:
-    opts, args = getopt.getopt(args,"f:s:t:r:a:h",["file1=",
+    opts, args = getopt.getopt(args,"f:s:t:r:a:c:h",["file1=",
                                              "file2=",
                                              "file3=",
                                              "renumber=",
-                                             "average="
+                                             "average=",
+                                             "rdf_cutoff=",
                                              "help"])
 except getopt.GetoptError:
-    print('Usage: ./gmx_analysis_tools -f <file1> -s <file2> -t <file3> -r <true/fault> -a <true/fault> \
+    print('Usage: ./gmx_analysis_tools -f <file1> -s <file2> -t <file3> -r <true/fault> -a <true/fault> -c <rdf_cutoff> \
           \nCurrently it works for rmsd, rmsf, sasa \
           \n-r true: default is fault, renumber the residues, mainly for the uncontinues residue numbers while work on rmsf per residue\
-          \n-a true: default is fault, output the average score for each column at the bottom line, mainly for rmsd and radius of gyration calculation')
+          \n-a true: default is fault, output the average score for each column at the bottom line, mainly for rmsd and radius of gyration calculation \
+          \n-c 5: default is 4.7, used for rdf plto, when the value is setted to 5 which means only read values when their distance <= 5nm')
     sys.exit(2)
 
 for opt, arg in opts:
     if opt == '-h':
-        print('Usage: ./gmx_analysis_tools -f <file1> -s <file2> -t <file3> -r <true/fault> -a <true/fault> \
+        print('Usage: ./gmx_analysis_tools -f <file1> -s <file2> -t <file3> -r <true/fault> -a <true/fault> -c <rdf_cutoff>\
           \nCurrently it works for rmsd, rmsf, sasa \
           \n-r true: default is fault, renumber the residues, mainly for the uncontinues residue numbers while work on rmsf per residue\
-          \n-a true: default is fault, output the average score for each column at the bottom line, mainly for rmsd and radius of gyration calculation')
+          \n-a true: default is fault, output the average score for each column at the bottom line, mainly for rmsd and radius of gyration calculation \
+          \n-c 5: default is 4.7, used for rdf plto, when the value is setted to 5 which means only read values when their distance <= 5nm')
         sys.exit()
     elif opt in ("-f", "--file1"):
         file1 = str(arg)
@@ -51,6 +55,8 @@ for opt, arg in opts:
         renumber = str(arg)
     elif opt in ("-a", "--average"):
         ave = str(arg)
+    elif opt in ("-c", "--rdf_cutoff"):
+        rdf_cutoff = round(float(arg),1)
 
 class merger():
     flag = ''
@@ -67,7 +73,7 @@ class merger():
     max_value = []
     average_value = []
     
-    def __init__(self,file1, file2, file3, renumber, ave):
+    def __init__(self,file1, file2, file3, renumber, ave, rdf_cutoff):
         self.flag_recognizer(file1, file2, file3)
         if self.flag == 'rmsd':
             self.rmsd_averager(file1,file2,file3, ave)
@@ -81,6 +87,8 @@ class merger():
             self.gyrate_averager(file1, file2,file3, ave)
         elif self.flag == 'dipoles':
             self.dipoles_averager(file1, file2,file3, ave)
+        elif self.flag == 'rdf':
+            self.rdf_averager(file1, file2,file3, ave, rdf_cutoff)
         
     def flag_recognizer(self,file1, file2, file3):                                                   # first method to be called in __main__, used for creating object and charactors.
         #self.atomic_index.clear()                                                   # cleaveage the information of previous object before put new record into these charactors
@@ -98,6 +106,8 @@ class merger():
                     self.flag = 'gyrate'
                 elif self.flag == 'dipoles,':
                     self.flag = 'dipoles'
+                elif self.flag == 'rdf,':
+                    self.flag = 'rdf'
             if len(lines) >= 9 and '-or' in lines[8]:
                 self.sasa_flag = '-or'
                 
@@ -444,7 +454,56 @@ class merger():
             writer = csv.writer(file)
             writer.writerows(data)
             
+    def rdf_averager(self, file1, file2, file3, ave, rdf_cutoff):
+        a = 25
+        with open(file1, 'r') as f:
+            lines = f.readlines() 
+            for i in range(len(lines)):
+                if i >= a:
+                    #print(lines[i])
+                    if float(lines[i].split()[0]) <= rdf_cutoff:
+                        self.time1.append(float(lines[i].split()[0]))
+                        self.values1.append(float(lines[i].split()[1]))
+        with open(file2, 'r') as f:
+            lines = f.readlines() 
+            for i in range(len(lines)):
+                if i >= a:
+                    #print(lines[i])
+                    if float(lines[i].split()[0]) <= rdf_cutoff:
+                        self.time2.append(float(lines[i].split()[0]))
+                        self.values2.append(float(lines[i].split()[1]))
+        with open(file3, 'r') as f:
+            lines = f.readlines() 
+            for i in range(len(lines)):
+                if i >= a:
+                    #print(lines[i])
+                    if float(lines[i].split()[0]) <= rdf_cutoff:
+                        self.time3.append(float(lines[i].split()[0]))
+                        self.values3.append(float(lines[i].split()[1]))
+                    
+        for i in [self.values1, self.values2, self.values3]:
+            self.max_value.append(max(i))
+            self.average_value.append(sum(i)/len(i))
+        with open('rdf_ave_max.txt', 'w') as w:
+            w.write("%9s %12s %12s" %  ("Replica_No.", "Average_value", "Max_value"))
+            for i in range(3):
+               # w.write(f"\n replica{i}    {self.average_value[i]:-8.3f}{self.max_value[i]:16.3f}")
+               w.write('\n')
+               w.write("%9s %12.3f %12.3f" %  ("Replica-"+str(i), self.average_value[i], self.max_value[i]))
+            if ave == 'true':
+                w.write('\n')
+                w.write("%9s %12.3f %12.3f" % ("Average", sum(self.average_value)/len(self.average_value), sum(self.max_value)/len(self.max_value)))
+        
+        data = [["Replica_No.", "Average_value", "Max_value"]]
+        for i in range(len(self.max_value)):
+            data.append([i, self.average_value[i], self.max_value[i]])
+        if ave == 'true':
+            data.append(["Average", sum(self.average_value)/len(self.average_value), sum(self.max_value)/len(self.max_value)])
+        with open('rdf_ave_max.csv', 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerows(data)
+            
                 
 
                     
-x = merger(file1,file2,file3,renumber, ave)
+x = merger(file1,file2,file3,renumber, ave, rdf_cutoff)
