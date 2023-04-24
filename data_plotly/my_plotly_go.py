@@ -61,7 +61,8 @@ except getopt.GetoptError:
           \n ./plotly_go -f sasa1.xvg -s sasa2.xvg -t sasa3.xvg -o sasa123.png -r true -x "Time (ns)" -y "SASA (nm<sup>2</sup>)" \
           \n ./plotly_go -f rdf1.xvg -s rdf2.xvg -t rdf3.xvg -o rdf123.png -c 4.7 -o rdf123.png \
           \n ./plotly_go -m sasa1.xvg sasa2.xvg sasa3.xvg sasa4.xvg sasa5.xvg sasa6.xvg sasa7.xvg sasa8.xvg sasa9.xvg -o multy_sasa_9.png -a true \
-          \n ./plotly_go -m resarea1.xvg resarea2.xvg resarea3.xvg -o test_resare123.png -a true -r true')
+          \n ./plotly_go -m resarea1.xvg resarea2.xvg resarea3.xvg -o test_resare123.png -a true -r true \
+          \n for i in rmsd rmsf distance sasa resarea mtot gyrate_bb rdf; do ./plotly_go -f ${i}1.xvg -s ${i}2.xvg -t ${i}3.xvg -o ${i}123.png -a 3 -r true -c 4.7 ; done')
     sys.exit(2)
 
 for opt, arg in opts:
@@ -83,7 +84,8 @@ for opt, arg in opts:
           \n ./plotly_go -f sasa1.xvg -s sasa2.xvg -t sasa3.xvg -o sasa123.png -r true -x "Time (ns)" -y "SASA (nm<sup>2</sup>)" \
           \n ./plotly_go -f rdf1.xvg -s rdf2.xvg -t rdf3.xvg -o rdf123.png -c 4.7 -o rdf123.png \
           \n ./plotly_go -m sasa1.xvg sasa2.xvg sasa3.xvg sasa4.xvg sasa5.xvg sasa6.xvg sasa7.xvg sasa8.xvg sasa9.xvg -o multy_sasa_9.png -a true \
-          \n ./plotly_go -m resarea1.xvg resarea2.xvg resarea3.xvg -o test_resare123.png -a true -r true')
+          \n ./plotly_go -m resarea1.xvg resarea2.xvg resarea3.xvg -o test_resare123.png -a true -r true \
+          \n for i in rmsd rmsf distance sasa resarea mtot gyrate_bb rdf; do ./plotly_go -f ${i}1.xvg -s ${i}2.xvg -t ${i}3.xvg -o ${i}123.png -a 3 -r true -c 4.7 ; done')
         sys.exit()
     elif opt in ("-f", "--file1"):
         file1 = str(arg)
