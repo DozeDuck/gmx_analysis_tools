@@ -43,7 +43,7 @@ try:
                                              "x_file=",
                                              "help"])
 except getopt.GetoptError:
-    print('Usage: ./plotly_go -f <file1> -s <file2> -t <file3> -o <output_name> -r <true/fault> -a <2/3> -x <xaxis_name> -y <yaxis_name> -c <rdf_cutoff> \
+    print('Usage: ./plotly_go -f <file1> -s <file2> -t <file3> -o <output_name> -r <true/fault> -a <2/3/true> -x <xaxis_name> -y <yaxis_name> -c <rdf_cutoff> -p <plot_title> \
           \nCurrently it works for rmsd, rmsf, sasa_time, sasa_residue, gyration, dipole movement, distance  \
           \nIt can read one, two or three same type files \
           \n-o output_name.png, suitable file format for output: png, jpg, jpeg, webp, svg, pdf, eps, json \
@@ -66,7 +66,7 @@ except getopt.GetoptError:
 
 for opt, arg in opts:
     if opt == '-h':
-        print('Usage: ./plotly_go -f <file1> -s <file2> -t <file3> -o <output_name> -r <true/fault> -a <2/3> -x <xaxis_name> -y <yaxis_name> -c <rdf_cutoff> \
+        print('Usage: ./plotly_go -f <file1> -s <file2> -t <file3> -o <output_name> -r <true/fault> -a <2/3/true> -x <xaxis_name> -y <yaxis_name> -c <rdf_cutoff> -p <plot_title> \
           \nCurrently it works for rmsd, rmsf, sasa_time, sasa_residue, gyration, dipole movement, distance  \
           \nIt can read one, two or three same type files \
           \n-o output_name.png, suitable file format for output: png, jpg, jpeg, webp, svg, pdf, eps, json \
