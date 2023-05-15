@@ -11,6 +11,9 @@ import re
 # import plotly
 import plotly.graph_objs as go
 import plotly.io as pio
+# for PCA
+import numpy as np
+from rpy2.robjects import r
 
 args=sys.argv[1:]  
 file1 = ''
@@ -27,9 +30,13 @@ yaxis_name = 0
 rdf_cutoff = 0
 multi_files = 0
 plot_name = ''
+pca = 0
+rscript = 0
+nbin = 1000
+size = 500
 
 try:
-    opts, args_lala = getopt.getopt(args,"f:s:t:r:a:o:x:y:c:m:p:l:h",["file1=",
+    opts, args_lala = getopt.getopt(args,"f:s:t:r:a:o:x:y:c:m:p:l:j:n:z:h",["file1=",
                                              "file2=",
                                              "file3=",
                                              "renumber=",
@@ -41,16 +48,22 @@ try:
                                              "multi_files=",
                                              "plot_name=",
                                              "x_file=",
+                                             "pca",
+                                             "nbin=",
+                                             "size=",
                                              "help"])
 except getopt.GetoptError:
-    print('Version: 1.0 \
-          \nCurrently it works for rmsd, rmsf, sasa_time, sasa_residue, gyration, dipole movement, rdf, distance  \
+    print('Version: 1.2 \
+          \nCurrently it works for rmsd, rmsf, sasa_time, sasa_residue, gyration, dipole movement, rdf, distance, PCA  \
           \nIt can read one, two or three same type files \
           \n-o output_name.png, suitable file format for output: png, jpg, jpeg, webp, svg, pdf, eps, json \
           \n-r true: default is fault, renumber the residues, mainly for the duplicated residue numbers while work on rmsf and sasa per residue \
           \n-c number: rdf distance cutoff value \
           \n-a 2 or 3 or true: default is fault, output the average score for each replica \
           \n-p plot_name: the title shoed in plot \
+          \n-j whether reading cluster_PCA0.xvg cluster_PCA1.xvg ..., default is 0, if you want generate PCA contour heat map, then type 1 \
+          \n-n represent "nbin", mainly used for pca ploting, default value=1000, the larger the smoother, however, if there is white line in your PCA_Density plot, please change the value to get a cleaner plot \
+          \n-z represent "size", mainly used for pca ploting, default value=500, the larger the higher resolution, if there is white line in your PCA Density plot, please change the value to get a cleaner plot \
           \nUsage: \
           \n ./plotly_go -f <file1> -s <file2> -t <file3> -o <output_name> -r <true/fault> -a <2/3/true> -x <xaxis_name> -y <yaxis_name> -c <rdf_cutoff> -p <plot_title> \
           \n ./plotly_go -m <file1> <file2> <file3>  -o <output_name> -r <true/fault> -a <2/3/true> -x <xaxis_name> -y <yaxis_name> -c <rdf_cutoff> -p <plot_title>  \
@@ -63,19 +76,23 @@ except getopt.GetoptError:
           \n ./plotly_go -f sasa1.xvg -s sasa2.xvg -t sasa3.xvg -o sasa123.png -r true -x "Time (ns)" -y "SASA (nm<sup>2</sup>)" \
           \n ./plotly_go -f rdf1.xvg -s rdf2.xvg -t rdf3.xvg -o rdf123.png -c 4.7 -o rdf123.png \
           \n ./plotly_go -m sasa1.xvg sasa2.xvg sasa3.xvg sasa4.xvg sasa5.xvg sasa6.xvg sasa7.xvg sasa8.xvg sasa9.xvg -o multy_sasa_9.png -a true \
-          \n ./plotly_go -m resarea1.xvg resarea2.xvg resarea3.xvg -o test_resare123.png -a true -r true')
+          \n ./plotly_go -m resarea1.xvg resarea2.xvg resarea3.xvg -o test_resare123.png -a true -r true \
+          \n ./plotly_go -m 2dproj1.xvg -n 1000 -z 500 -o pca_myname.png')
     sys.exit(2)
 
 for opt, arg in opts:
     if opt == '-h':
-        print('Version: 1.0 \
-          \nCurrently it works for rmsd, rmsf, sasa_time, sasa_residue, gyration, dipole movement, rdf, distance  \
+        print('Version: 1.2 \
+          \nCurrently it works for rmsd, rmsf, sasa_time, sasa_residue, gyration, dipole movement, rdf, distance, PCA  \
           \nIt can read one, two or three same type files \
           \n-o output_name.png, suitable file format for output: png, jpg, jpeg, webp, svg, pdf, eps, json \
           \n-r true: default is fault, renumber the residues, mainly for the duplicated residue numbers while work on rmsf and sasa per residue\
           \n-a 2 or 3 or true: default is fault, output the average score for each replica \
           \n-c number: rdf distance cutoff value \
           \n-p plot_name: the title shoed in plot \
+          \n-j whether reading cluster_PCA0.xvg cluster_PCA1.xvg ..., default is 0, if you want generate PCA contour heat map, then type 1 \
+          \n-n represent "nbin", mainly used for pca ploting, default value=1000, the larger the smoother, however, if there is white line in your PCA_Density plot, please change the value(-n 500) to get a cleaner plot \
+          \n-\ represent "size", mainly used for pca ploting, default value=500, the larger the higher resolution, if there is white line in your PCA Density plot, please change the value to get a cleaner plot \
           \nUsage: \
           \n ./plotly_go -f <file1> -s <file2> -t <file3> -o <output_name> -r <true/fault> -a <2/3/true> -x <xaxis_name> -y <yaxis_name> -c <rdf_cutoff> -p <plot_title> \
           \n ./plotly_go -m <file1> <file2> <file3>  -o <output_name> -r <true/fault> -a <2/3/true> -x <xaxis_name> -y <yaxis_name> -c <rdf_cutoff> -p <plot_title> \
@@ -87,7 +104,8 @@ for opt, arg in opts:
           \n ./plotly_go -f sasa1.xvg -s sasa2.xvg -t sasa3.xvg -o sasa123.png -r true -x "Time (ns)" -y "SASA (nm<sup>2</sup>)" \
           \n ./plotly_go -f rdf1.xvg -s rdf2.xvg -t rdf3.xvg -o rdf123.png -c 4.7 -o rdf123.png \
           \n ./plotly_go -m sasa1.xvg sasa2.xvg sasa3.xvg sasa4.xvg sasa5.xvg sasa6.xvg sasa7.xvg sasa8.xvg sasa9.xvg -o multy_sasa_9.png -a true \
-          \n ./plotly_go -m resarea1.xvg resarea2.xvg resarea3.xvg -o test_resare123.png -a true -r true')
+          \n ./plotly_go -m resarea1.xvg resarea2.xvg resarea3.xvg -o test_resare123.png -a true -r true \
+          \n ./plotly_go -m 2dproj1.xvg -n 1000 -z 500 -o pca_myname.png')
         sys.exit()
     elif opt in ("-f", "--file1"):
         file1 = str(arg)
@@ -112,6 +130,12 @@ for opt, arg in opts:
     elif opt in ("-p", "--plot_name"):
         plot_name = str(arg)
     # how to recognize the space seperated command line file inputs
+    elif opt in ("-j", "--pca"):
+        pca = int(arg)
+    elif opt in ("-n", "--nbin"):
+        nbin = int(arg)
+    elif opt in ("-z", "--size"):
+        size = int(arg)
     elif opt in ("-m", "--multi_files"):
         value = 1 
         multi_files = []
@@ -127,7 +151,7 @@ for opt, arg in opts:
         for value in multi_files:
             args.remove(value)
         try:
-            opts, args_lala = getopt.getopt(args,"f:s:t:r:a:o:x:y:c:m:p:l:h",["file1=",
+            opts, args_lala = getopt.getopt(args,"f:s:t:r:a:o:x:y:c:m:p:l:j:n:z:h",["file1=",
                                                      "file2=",
                                                      "file3=",
                                                      "renumber=",
@@ -139,6 +163,9 @@ for opt, arg in opts:
                                                      "multi_files=",
                                                      "plot_name=",
                                                      "x_file=",
+                                                     "pca",
+                                                     "nbin=",
+                                                     "size=",
                                                      "help"])
         except getopt.GetoptError:
             sys.exit(2)
@@ -166,6 +193,12 @@ for opt, arg in opts:
                 multi_files = arg.split(',')
             elif opt in ("-p", "--plot_name"):
                 plot_name = str(arg)
+            elif opt in ("-j", "--pca"):
+                pca = int(arg)
+            elif opt in ("-n", "--nbin"):
+                nbin = int(arg)
+            elif opt in ("-z", "--size"):
+                size = int(arg)
             
                     
 
@@ -174,6 +207,7 @@ for opt, arg in opts:
 class plotly_go():
     flag = ''
     sasa_flag = ''
+    pca_flag = ''
     time1 = []
     values1 = []
     sd1 = []
@@ -187,7 +221,7 @@ class plotly_go():
     average_value = []
     multi_flag = ''
     
-    def __init__(self,file1, file2, file3, output_name, renumber, ave, xaxis_name, yaxis_name, rdf_cutoff, multi_files, plot_name):
+    def __init__(self,file1, file2, file3, output_name, renumber, ave, xaxis_name, yaxis_name, rdf_cutoff, multi_files, plot_name, pca, nbin, size):
         if multi_files == 0:
             self.flag_recognizer(file1, file2, file3)
             if self.flag == 'rmsd':
@@ -206,11 +240,15 @@ class plotly_go():
                 self.distance_averager(file1, file2,file3, ave, output_name, xaxis_name, yaxis_name)
             elif self.flag == 'rdf':
                 self.rdf_averager(file1,file2,file3, ave, output_name, xaxis_name, yaxis_name, rdf_cutoff)
+
         elif len(multi_files) >=1:
             # print(multi_files)
             file1 = multi_files[0]
             self.flag_recognizer(file1, file2, file3)
-            self.plotly_multy(self.flag, multi_files, xaxis_name, yaxis_name, renumber, ave, output_name, rdf_cutoff, plot_name)
+            if self.pca_flag != 1:
+                self.plotly_multy(self.flag, multi_files, xaxis_name, yaxis_name, renumber, ave, output_name, rdf_cutoff, plot_name)
+            elif self.pca_flag == 1:
+                self.plotly_pca(multi_files, xaxis_name, yaxis_name, renumber, ave, output_name, rdf_cutoff, plot_name, nbin, size)
             
 
             
@@ -221,24 +259,30 @@ class plotly_go():
         with open(file1, 'r') as f:
             lines = f.readlines()                                                 # "filename" = $PATH/crankpep_docking_results/PLDAYL_corrected_top_1.pdb
             if len(lines)  >= 3:
-                self.flag = lines[2].split()[5]
-                if self.flag == 'rms,' :
-                    self.flag = 'rmsd'
-                elif self.flag == 'rmsf,':
-                    self.flag = 'rmsf'
-                elif self.flag == 'sasa,':
-                    self.flag = 'sasa'
-                elif self.flag == 'gyrate,':
-                    self.flag = 'gyrate'
-                elif self.flag == 'dipoles,':
-                    self.flag = 'dipoles'
-                elif self.flag == 'distance,':
-                    self.flag = 'distance'
-                elif self.flag == 'rdf,':
-                    self.flag = 'rdf'
+                try:
+                    self.flag = lines[2].split()[5]
+                    if self.flag == 'rms,' :
+                        self.flag = 'rmsd'
+                    elif self.flag == 'rmsf,':
+                        self.flag = 'rmsf'
+                    elif self.flag == 'sasa,':
+                        self.flag = 'sasa'
+                    elif self.flag == 'gyrate,':
+                        self.flag = 'gyrate'
+                    elif self.flag == 'dipoles,':
+                        self.flag = 'dipoles'
+                    elif self.flag == 'distance,':
+                        self.flag = 'distance'
+                    elif self.flag == 'rdf,':
+                        self.flag = 'rdf'
+                except:
+                    pass
 
             if len(lines) >= 9 and '-or' in lines[8]:
                 self.sasa_flag = '-or'
+                
+            if 'pca' in str(file1).lower() or '2dproj' in str(file1):
+                self.pca_flag = 1
 
                 
                 
@@ -955,10 +999,119 @@ class plotly_go():
             fig = go.Figure(data=data, layout=layout)
             pio.write_image(fig, "Average_" + output_file_name)
             
-
+    def plotly_pca(self, multi_files, xaxis_name, yaxis_name, renumber, ave, output_name, rdf_cutoff, plot_name, nbin, size):
+        x_points = []
+        y_points = []
+        
+        ################## define plot title, x axis name and y axis name ##################
+        if plot_name == '':
+            plot_title = 'PCA 2D projection of trajectory'
+        else:
+            plot_title = str(plot_name)
+            pass
+        
+        if xaxis_name == 0:
+            x_name = 'projection on eigenvector 1 (nm)'
+        else:
+            x_name = xaxis_name
+            pass
+        
+        if yaxis_name == 0 and plot_title not in ['Solvent Accessible Surface', 'Area per residue over the trajectory']:
+            y_name = 'projection on eigenvector 2 (nm)'
+        else:
+            y_name = yaxis_name
+            pass 
+        ################## reading the datas!! ##################        
+        for i in multi_files:
+            x_points=[]
+            y_points=[]
+            # create empty list
+            with open(i, "r") as f:
+                lines = f.readlines()
+                for num in range(len(lines)):
+                    if lines[num].startswith("#") or lines[num].startswith("@"):
+                        pass
+                    else:
+                        x_points.append(float(lines[num].split()[0]))
+                        y_points.append(float(lines[num].split()[1])) 
                 
+            # 创建散点图轨迹
+            scatter_trace = go.Scatter(
+                x=x_points,
+                y=y_points,
+                mode='markers',
+                marker=dict(
+                    size=5,
+                    color='black'
+                )
+            )
             
+            layout = go.Layout(title=plot_title, title_x=0.5, title_y=1, font=dict(size=20),
+                                xaxis=dict(title=x_name, titlefont=dict(size=20, color='black', family='Arial'), zeroline=False, autorange=True,
+                                          showgrid=False, gridwidth=1, gridcolor='rgba(0,0,0,0.1)', tickfont=dict(size=20)),
+                                yaxis=dict(title=y_name, titlefont=dict(size=20, color='black', family='Arial'), zeroline=False, autorange=True,
+                                          showgrid=False, gridwidth=1, gridcolor='rgba(0,0,0,0.1)', tickfont=dict(size=20)),
+                                legend=dict(x=1, y=1, orientation='v', font=dict(size=30)), showlegend=False,
+                                plot_bgcolor='rgba(255, 255, 255, 0.1)',
+                                paper_bgcolor='rgba(255, 255, 255, 0.2)')
+            
+            # 创建图形对象
+            fig = go.Figure(data=scatter_trace, layout=layout)
+                    
+            # 显示图形
+            # fig.show()
+            if output_name == 'plotly.png':
+                pio.write_image(fig, "PCA_Scatter_"+i.split('.')[0]+".png")
+            else:
+                pio.write_image(fig, "Scatter_" + output_name)
+
+
+####################################################################################################################################       
+        # 用R创建PCA图
+        x_diff = np.max(x_points) - np.min(x_points)
+        y_diff = np.max(y_points) - np.min(y_points)
+        width= (x_diff / y_diff) * size
+        height = 1 * size
+        # 读取数据
+        for i in multi_files: 
+            r('data <- read.table(%r, skip = 17, header = FALSE)' % (i))
+            
+            # 设置变量名
+            r('names(data) <- c("PC1", "PC2")')
+            
+            # 导入所需的R包
+            r('library(RColorBrewer)')
+            
+            # 执行其他指令
+            r('zBot <- 1.52')
+            r('zTop <- 3.42')
+            r('zW <- 0.83')
+            r('buylrd <- rev(brewer.pal(11,"RdYlBu"))')
+            
+            # 保存为PNG文件
+            if output_name == 'plotly.png':
+                # r('png(file=%r, height=600, width=450)' % ("PCA_Density_" + i.split('.')[0] + ".png"))
+                # r('png(file=%r)' % ("PCA_Density_" + i.split('.')[0] + ".png"))
+                r('png(file=%r, height=%r, width=%r)' % ("PCA_Density_" + i.split('.')[0] + ".png", height, width))
+                r('smoothScatter(data$PC2 ~ data$PC1, nbin=%r, colramp = colorRampPalette(c(buylrd)),nrpoints=Inf, pch="", cex=.7,col="black",main=%r, xlab=%r, ylab=%r,transformation = function(x) x^.45)' % (nbin, plot_title, x_name, y_name))
+                r('dev.off()')
+            else:
+                # r('png(file=%r, height=600, width=450)' % (output_name))
+                # r('png(file=%r)' % (output_name))
+                r('png(file=%r, height=%r, width=%r)' % ("Density_" + output_name, height, width))
+                r('smoothScatter(data$PC2 ~ data$PC1, nbin=%r, colramp = colorRampPalette(c(buylrd)),nrpoints=Inf, pch="", cex=.7,col="black",main=%r, xlab=%r, ylab=%r,transformation = function(x) x^.45)' % (nbin, plot_title, x_name, y_name))
+                r('dev.off()')
+            
+            # # 保存为PDF文件
+            # r('pdf(file="PCA.pdf", height=1600, width=1600,paper = "a4")')
+            # r('smoothScatter(data$PC2 ~ data$PC1, nbin=1000, colramp = colorRampPalette(c(buylrd)),nrpoints=Inf, pch="", cex=.7,col="black",main="Shangze MD simulation PCA analysis", xlab="PCA1", ylab="PCA2",transformation = function(x) x^.5)')
+            # r('dev.off()')
+
+
+
+
+
 
 
                     
-x = plotly_go(file1,file2,file3, output_name, renumber, ave, xaxis_name, yaxis_name, rdf_cutoff, multi_files, plot_name)
+x = plotly_go(file1,file2,file3, output_name, renumber, ave, xaxis_name, yaxis_name, rdf_cutoff, multi_files, plot_name, pca, nbin, size)
