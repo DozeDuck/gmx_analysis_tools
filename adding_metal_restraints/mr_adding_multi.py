@@ -114,7 +114,7 @@ class mr():
                 metal = locals()["metal" + str(i)]
                 atom = locals()["atom" + str(i)]
                 metal_point = [self.x[metal-1],self.y[metal-1],self.z[metal-1]]
-                print("please add below to topol.top's distance part")
+                print("; please add below to topol.top's distance part")
                 for i in atom:
                     locals()["atom" + str(i)] = [self.x[i-1],self.y[i-1],self.z[i-1]]
                     print("%5d%6d%6d%7.2f%9d" % (metal, i, 6, self.calculate_distance(metal_point, locals()["atom" + str(i)]), bond_strength))
