@@ -10,7 +10,8 @@ import re
 import argparse
 
 parser = argparse.ArgumentParser(description='Optimised SASA \n'
-                                 'Usage: python sasa-better.py -z NIST.pdb -x sasa1.xvg sasa2.xvg sasa3.xvg -o nist_sasa_good.txt',
+                                 'Usage: ./sasa_cool -z NIST.pdb -x sasa1.xvg sasa2.xvg sasa3.xvg -o nist_sasa_good.txt \n'
+                                 'Usage: ./sasa_cool -z NIST.pdb -x sasa1.xvg sasa2.xvg sasa3.xvg -o nist_sasa_good.txt -e 0 \n',
                                  formatter_class=argparse.RawTextHelpFormatter)
 
 parser.add_argument('-z', '--pdb', nargs='+', required=True, default=0, help='input gro file')
@@ -66,28 +67,29 @@ output_name = args.output
 #               'tryptophan' : args.tryptophan,
 #     }
 
-charge_dic = {'ARG' : args.arginine,
-              'LYS'   : args.lysine,
-              'HIS': args.lysine,
-              'ASP' : args.asparticacid,
-              'GLU' : args.glutamicacid,
-              'SER' : args.serine,
-              'THR' : args.threonine,
-              'ASN' : args.asparagine,
-              'GLN' : args.glutamine,
-              'CYS' : args.cysteine,
-              'SEC' : args.selenocysteine,
-              'GLY' : args.glycine,
-              'PRO' : args.proline,
-              'ALA' : args.alanine,
-              'VAL' : args.valine,
-              'ILE' : args.isoleucine,
-              'LEU' : args.leucine,
-              'MET' : args.methionine,
-              'PHE' : args.phenylalanine,
-              'TYR' : args.tyrosine,
-              'TRP' : args.tryptophan,
+charge_dic = {'ARG' : int(args.arginine),
+              'LYS' : int(args.lysine),
+              'HIS': int(args.lysine),
+              'ASP' : int(args.asparticacid),
+              'GLU' : int(args.glutamicacid),
+              'SER' : int(args.serine),
+              'THR' : int(args.threonine),
+              'ASN' : int(args.asparagine),
+              'GLN' : int(args.glutamine),
+              'CYS' : int(args.cysteine),
+              'SEC' : int(args.selenocysteine),
+              'GLY' : int(args.glycine),
+              'PRO' : int(args.proline),
+              'ALA' : int(args.alanine),
+              'VAL' : int(args.valine),
+              'ILE' : int(args.isoleucine),
+              'LEU' : int(args.leucine),
+              'MET' : int(args.methionine),
+              'PHE' : int(args.phenylalanine),
+              'TYR' : int(args.tyrosine),
+              'TRP' : int(args.tryptophan),
     }
+
 
 class sasa_better:
     atomic_index = []
