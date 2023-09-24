@@ -1037,6 +1037,7 @@ class plotly_go():
         for i in multi_files:
             x_points=[]
             y_points=[]
+            labels = []
             # create empty list
             with open(i, "r") as f:
                 lines = f.readlines()
@@ -1046,37 +1047,66 @@ class plotly_go():
                     else:
                         x_points.append(float(lines[num].split()[0]))
                         y_points.append(float(lines[num].split()[1]))
+                        labels.append(num)
 
-            # 创建散点图轨迹
-            scatter_trace = go.Scatter(
+            # # 创建散点图轨迹
+            # scatter_trace = go.Scatter(
+            #     x=x_points,
+            #     y=y_points,
+            #     mode='markers',
+            #     marker=dict(
+            #         size=5,
+            #         color='black'
+            #     )
+            # )
+
+            # layout = go.Layout(title=plot_title, title_x=0.5, title_y=1, font=dict(size=20),
+            #                     xaxis=dict(title=x_name, titlefont=dict(size=20, color='black', family='Arial'), zeroline=False, autorange=True,
+            #                               showgrid=False, gridwidth=1, gridcolor='rgba(0,0,0,0.1)', tickfont=dict(size=20)),
+            #                     yaxis=dict(title=y_name, titlefont=dict(size=20, color='black', family='Arial'), zeroline=False, autorange=True,
+            #                               showgrid=False, gridwidth=1, gridcolor='rgba(0,0,0,0.1)', tickfont=dict(size=20)),
+            #                     legend=dict(x=1, y=1, orientation='v', font=dict(size=30)), showlegend=False,
+            #                     plot_bgcolor='rgba(255, 255, 255, 0.1)',
+            #                     paper_bgcolor='rgba(255, 255, 255, 0.2)')
+
+            # # 创建图形对象
+            # fig = go.Figure(data=scatter_trace, layout=layout)
+
+            # # 显示图形
+            # # fig.show()
+            # if output_name == 'plotly.png':
+            #     pio.write_image(fig, "PCA_Scatter_"+i.split('.')[0]+".png")
+            # else:
+            #     pio.write_image(fig, "Scatter_" + output_name)
+            
+            # 创建一个 Scatter 对象
+            scatter = go.Scatter(
                 x=x_points,
                 y=y_points,
                 mode='markers',
                 marker=dict(
-                    size=5,
-                    color='black'
-                )
+                    color=labels,  # 设置颜色为标签的数值
+                    colorscale='rainbow',  # 颜色映射，你可以根据需要选择不同的颜色映射
+                    colorbar=dict(title='Label Range'),  # 添加颜色条
+                ),
             )
 
-            layout = go.Layout(title=plot_title, title_x=0.5, title_y=1, font=dict(size=20),
-                                xaxis=dict(title=x_name, titlefont=dict(size=20, color='black', family='Arial'), zeroline=False, autorange=True,
-                                          showgrid=False, gridwidth=1, gridcolor='rgba(0,0,0,0.1)', tickfont=dict(size=20)),
-                                yaxis=dict(title=y_name, titlefont=dict(size=20, color='black', family='Arial'), zeroline=False, autorange=True,
-                                          showgrid=False, gridwidth=1, gridcolor='rgba(0,0,0,0.1)', tickfont=dict(size=20)),
-                                legend=dict(x=1, y=1, orientation='v', font=dict(size=30)), showlegend=False,
-                                plot_bgcolor='rgba(255, 255, 255, 0.1)',
-                                paper_bgcolor='rgba(255, 255, 255, 0.2)')
+            # 创建数据列表
+            data = [scatter]
 
-            # 创建图形对象
-            fig = go.Figure(data=scatter_trace, layout=layout)
+            # 创建布局
+            layout = go.Layout(
+                title='PCA plot with Color Bar for frame order',
+                xaxis=dict(title='PC1'),
+                yaxis=dict(title='PC2'),
+            )
 
-            # 显示图形
-            # fig.show()
+            # 创建 Figure 对象
+            fig = go.Figure(data=data, layout=layout)
             if output_name == 'plotly.png':
                 pio.write_image(fig, "PCA_Scatter_"+i.split('.')[0]+".png")
             else:
                 pio.write_image(fig, "Scatter_" + output_name)
-
 
 ####################################################################################################################################
         # 用R创建PCA图
