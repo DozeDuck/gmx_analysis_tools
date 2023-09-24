@@ -1078,7 +1078,7 @@ class plotly_go():
             #     pio.write_image(fig, "PCA_Scatter_"+i.split('.')[0]+".png")
             # else:
             #     pio.write_image(fig, "Scatter_" + output_name)
-            
+
             # 创建一个 Scatter 对象
             scatter = go.Scatter(
                 x=x_points,
@@ -1096,9 +1096,14 @@ class plotly_go():
 
             # 创建布局
             layout = go.Layout(
-                title='PCA plot with Color Bar for frame order',
-                xaxis=dict(title='PC1'),
-                yaxis=dict(title='PC2'),
+                title='PCA plot with Color Bar for frame order', title_x=0.5, title_y=1, font=dict(size=24),
+                xaxis=dict(title='PC1 (nm)', titlefont=dict(size=40, color='black', family='Arial'), zeroline=False, autorange=True,
+                           showgrid=True, gridwidth=1, gridcolor='rgba(235,240,248,100)', tickfont=dict(size=30)),
+                yaxis=dict(title='PC2 (nm)', titlefont=dict(size=40, color='black', family='Arial'), zeroline=False, autorange=True,
+                           showgrid=True, gridwidth=1, gridcolor='rgba(235,240,248,100)', tickfont=dict(size=30)),
+                plot_bgcolor='rgba(255, 255, 255, 0.1)',
+                paper_bgcolor='rgba(255, 255, 255, 0.2)',
+                width=800, height=600
             )
 
             # 创建 Figure 对象
