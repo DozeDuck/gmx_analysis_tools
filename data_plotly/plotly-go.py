@@ -53,7 +53,7 @@ try:
                                              "size=",
                                              "help"])
 except getopt.GetoptError:
-    print('Version: 1.3 \
+    print('Version: 1.4 \
           \nCurrently it works for rmsd, rmsf, sasa_time, sasa_residue, gyration, dipole movement, rdf, distance, PCA  \
           \nIt can read one, two or three same type files \
           \n-o output_name.png, suitable file format for output: png, jpg, jpeg, webp, svg, pdf, eps, json \
@@ -82,7 +82,7 @@ except getopt.GetoptError:
 
 for opt, arg in opts:
     if opt == '-h':
-        print('Version: 1.3 \
+        print('Version: 1.4 \
           \nCurrently it works for rmsd, rmsf, sasa_time, sasa_residue, gyration, dipole movement, rdf, distance, PCA  \
           \nIt can read one, two or three same type files \
           \n-o output_name.png, suitable file format for output: png, jpg, jpeg, webp, svg, pdf, eps, json \
@@ -222,32 +222,36 @@ class plotly_go():
     multi_flag = ''
 
     def __init__(self,file1, file2, file3, output_name, renumber, ave, xaxis_name, yaxis_name, rdf_cutoff, multi_files, plot_name, pca, nbin, size):
-        if multi_files == 0:
-            self.flag_recognizer(file1, file2, file3)
-            if self.flag == 'rmsd':
-                self.rmsd_averager(file1,file2,file3, ave, output_name, xaxis_name, yaxis_name)
-            elif self.flag == 'rmsf':
-                self.rmsf_averager(file1, file2,file3, renumber, ave, output_name, xaxis_name, yaxis_name)
-            elif self.flag == 'sasa' and self.sasa_flag != '-or':
-                self.sasa_averager(file1, file2, file3, ave, output_name, xaxis_name, yaxis_name)
-            elif self.flag == 'sasa' and self.sasa_flag == '-or':
-                self.sasa_res_averager(file1, file2, file3,renumber,ave, output_name, xaxis_name, yaxis_name)
-            elif self.flag == 'gyrate':
-                self.gyrate_averager(file1, file2,file3, ave, output_name, xaxis_name, yaxis_name)
-            elif self.flag == 'dipoles':
-                self.dipoles_averager(file1, file2,file3, ave, output_name, xaxis_name, yaxis_name)
-            elif self.flag == 'distance':
-                self.distance_averager(file1, file2,file3, ave, output_name, xaxis_name, yaxis_name)
-            elif self.flag == 'rdf':
-                self.rdf_averager(file1,file2,file3, ave, output_name, xaxis_name, yaxis_name, rdf_cutoff)
+        # if multi_files == 0:
+        #     self.flag_recognizer(file1, file2, file3)
+        #     if self.flag == 'rmsd':
+        #         self.rmsd_averager(file1,file2,file3, ave, output_name, xaxis_name, yaxis_name)
+        #     elif self.flag == 'rmsf':
+        #         self.rmsf_averager(file1, file2,file3, renumber, ave, output_name, xaxis_name, yaxis_name)
+        #     elif self.flag == 'sasa' and self.sasa_flag != '-or':
+        #         self.sasa_averager(file1, file2, file3, ave, output_name, xaxis_name, yaxis_name)
+        #     elif self.flag == 'sasa' and self.sasa_flag == '-or':
+        #         self.sasa_res_averager(file1, file2, file3,renumber,ave, output_name, xaxis_name, yaxis_name)
+        #     elif self.flag == 'gyrate':
+        #         self.gyrate_averager(file1, file2,file3, ave, output_name, xaxis_name, yaxis_name)
+        #     elif self.flag == 'dipoles':
+        #         self.dipoles_averager(file1, file2,file3, ave, output_name, xaxis_name, yaxis_name)
+        #     elif self.flag == 'distance':
+        #         self.distance_averager(file1, file2,file3, ave, output_name, xaxis_name, yaxis_name)
+        #     elif self.flag == 'rdf':
+        #         self.rdf_averager(file1,file2,file3, ave, output_name, xaxis_name, yaxis_name, rdf_cutoff)
 
-        elif len(multi_files) >=1:
+
+
+        if len(multi_files) >=1:
             # print(multi_files)
             file1 = multi_files[0]
             self.flag_recognizer(file1, file2, file3)
-            if self.pca_flag != 1:
+            if self.pca_flag != 1 and self.flag != 'pca':
                 self.plotly_multy(self.flag, multi_files, xaxis_name, yaxis_name, renumber, ave, output_name, rdf_cutoff, plot_name)
             elif self.pca_flag == 1:
+                self.plotly_pca(multi_files, xaxis_name, yaxis_name, renumber, ave, output_name, rdf_cutoff, plot_name, nbin, size)
+            elif self.flag == 'pca':
                 self.plotly_pca(multi_files, xaxis_name, yaxis_name, renumber, ave, output_name, rdf_cutoff, plot_name, nbin, size)
 
 
@@ -275,6 +279,10 @@ class plotly_go():
                         self.flag = 'distance'
                     elif self.flag == 'rdf,':
                         self.flag = 'rdf'
+                    elif self.flag == 'convergence':
+                        self.flag = 'convergence'
+                    elif self.flag == 'anaeig,':
+                        self.flag = 'pca'
                 except:
                     pass
 
@@ -285,617 +293,628 @@ class plotly_go():
                 self.pca_flag = 1
 
 
+    def consist(self,x_values):
+        seq1 = [x_values[0]]
+        seq2 = []
+        # seq3 = []
+        for i in range(1, len(x_values)):
+            # find the break point
+            if x_values[i] <= x_values[i-1]+2 and seq2 == []:
+                seq1.append(x_values[i])
+            else:
+                seq2.append(x_values[i])
+        return seq1, seq2
+
+    # def rmsd_averager(self, file1, file2, file3, ave, output_name, xaxis_name, yaxis_name):
+    #     a = 18
+    #     with open(file1, 'r') as f:
+    #         lines = f.readlines()
+    #         for i in range(len(lines)):
+    #             if i >= a:
+    #                 #print(lines[i])
+    #                 self.time1.append(float(lines[i].split()[0]))
+    #                 self.values1.append(float(lines[i].split()[1]))
+    #     try:
+    #         with open(file2, 'r') as f:
+    #             lines = f.readlines()
+    #             for i in range(len(lines)):
+    #                 if i >= a:
+    #                     #print(lines[i])
+    #                     self.time2.append(float(lines[i].split()[0]))
+    #                     self.values2.append(float(lines[i].split()[1]))
+    #     except:
+    #         self.values2 = ''
+    #         pass
+    #     try:
+    #         with open(file3, 'r') as f:
+    #             lines = f.readlines()
+    #             for i in range(len(lines)):
+    #                 if i >= a:
+    #                     #print(lines[i])
+    #                     self.time3.append(float(lines[i].split()[0]))
+    #                     self.values3.append(float(lines[i].split()[1]))
+    #     except:
+    #         self.values3 = ''
+    #         pass
+
+    #     # calculate the average and max value for each replica
+    #     try:
+    #         for i in [self.values1, self.values2, self.values3]:
+    #             self.max_value.append(max(i))
+    #             self.average_value.append(sum(i)/len(i))
+    #     except:
+    #         pass
+
+    #     # define time unit is ps or ns
+    #     with open(file1, 'r') as f: # define time unit
+    #         lines = f.readlines()
+    #         if len(lines) >= 15 and '(ns)"' in lines[14]:
+    #             timeflag = 'ns'
+    #         elif len(lines) >= 15 and '(ps)"' in lines[14]:
+    #             timeflag = 'ps'
+    #     if timeflag == 'ps':
+    #         divisor = 1000
+    #         self.time1 = [x / divisor for x in self.time1]
 
 
-    def rmsd_averager(self, file1, file2, file3, ave, output_name, xaxis_name, yaxis_name):
-        a = 18
-        with open(file1, 'r') as f:
-            lines = f.readlines()
-            for i in range(len(lines)):
-                if i >= a:
-                    #print(lines[i])
-                    self.time1.append(float(lines[i].split()[0]))
-                    self.values1.append(float(lines[i].split()[1]))
-        try:
-            with open(file2, 'r') as f:
-                lines = f.readlines()
-                for i in range(len(lines)):
-                    if i >= a:
-                        #print(lines[i])
-                        self.time2.append(float(lines[i].split()[0]))
-                        self.values2.append(float(lines[i].split()[1]))
-        except:
-            self.values2 = ''
-            pass
-        try:
-            with open(file3, 'r') as f:
-                lines = f.readlines()
-                for i in range(len(lines)):
-                    if i >= a:
-                        #print(lines[i])
-                        self.time3.append(float(lines[i].split()[0]))
-                        self.values3.append(float(lines[i].split()[1]))
-        except:
-            self.values3 = ''
-            pass
-
-        # calculate the average and max value for each replica
-        try:
-            for i in [self.values1, self.values2, self.values3]:
-                self.max_value.append(max(i))
-                self.average_value.append(sum(i)/len(i))
-        except:
-            pass
-
-        # define time unit is ps or ns
-        with open(file1, 'r') as f: # define time unit
-            lines = f.readlines()
-            if len(lines) >= 15 and '(ns)"' in lines[14]:
-                timeflag = 'ns'
-            elif len(lines) >= 15 and '(ps)"' in lines[14]:
-                timeflag = 'ps'
-        if timeflag == 'ps':
-            divisor = 1000
-            self.time1 = [x / divisor for x in self.time1]
-
-
-        # Line chart
-        plot_title = 'RMSD'
-        if xaxis_name == 0:
-            x_name = 'Time (ns)'
-        else:
-            x_name = xaxis_name
-        if yaxis_name == 0:
-            y_name = 'RMSD (nm)'
-        else:
-            y_name = yaxis_name
-        self.plotly_noSD(output_name, plot_title, x_name, y_name, self.time1, self.values1, self.values2, self.values3, ave)
-
-
-
-
-    def rmsf_averager(self, file1, file2, file3, renumber, ave, output_name, xaxis_name, yaxis_name):
-        a = 17
-        with open(file1, 'r') as f:
-            lines = f.readlines()
-            for i in range(len(lines)):
-                if i >= a:
-                    #print(lines[i])
-                    self.time1.append(float(lines[i].split()[0]))
-                    self.values1.append(float(lines[i].split()[1]))
-        try:
-            with open(file2, 'r') as f:
-                lines = f.readlines()
-                for i in range(len(lines)):
-                    if i >= a:
-                        #print(lines[i])
-                        self.time2.append(float(lines[i].split()[0]))
-                        self.values2.append(float(lines[i].split()[1]))
-        except:
-            self.values2 = ''
-            pass
-        try:
-            with open(file3, 'r') as f:
-                lines = f.readlines()
-                for i in range(len(lines)):
-                    if i >= a:
-                        #print(lines[i])
-                        self.time3.append(float(lines[i].split()[0]))
-                        self.values3.append(float(lines[i].split()[1]))
-        except:
-            self.values3 = ''
-            pass
-
-        if renumber == 'true':
-            discontinuous_positions = []
-            for i in range(1, len(self.time1)):
-                if self.time1[i] != self.time1[i-1]+1:
-                    discontinuous_positions.append(i)
-            for i in range(len(self.time1)):
-                self.time1[i] = i+1
-
-        # define axis is atom or residues
-        if xaxis_name == 0:
-            with open(file1, 'r') as f: # define time unit
-                lines = f.readlines()
-                if len(lines) >= 15 and '"Residue"' in lines[14]:
-                    x_name = 'Residue Number'
-                elif len(lines) >= 15 and '"Atom"' in lines[14]:
-                    x_name = 'Atom Number'
-        else:
-            x_name = xaxis_name
-
-        plot_title = 'RMS fluctuation'
-        if yaxis_name == 0:
-            y_name = 'RMSF (nm)'
-        else:
-            y_name = yaxis_name
-        self.plotly_noSD(output_name, plot_title, x_name, y_name, self.time1, self.values1, self.values2, self.values3, ave)
+    #     # Line chart
+    #     plot_title = 'RMSD'
+    #     if xaxis_name == 0:
+    #         x_name = 'Time (ns)'
+    #     else:
+    #         x_name = xaxis_name
+    #     if yaxis_name == 0:
+    #         y_name = 'RMSD (nm)'
+    #     else:
+    #         y_name = yaxis_name
+    #     self.plotly_noSD(output_name, plot_title, x_name, y_name, self.time1, self.values1, self.values2, self.values3, ave)
 
 
 
 
+    # def rmsf_averager(self, file1, file2, file3, renumber, ave, output_name, xaxis_name, yaxis_name):
+    #     a = 17
+    #     with open(file1, 'r') as f:
+    #         lines = f.readlines()
+    #         for i in range(len(lines)):
+    #             if i >= a:
+    #                 #print(lines[i])
+    #                 self.time1.append(float(lines[i].split()[0]))
+    #                 self.values1.append(float(lines[i].split()[1]))
+    #     try:
+    #         with open(file2, 'r') as f:
+    #             lines = f.readlines()
+    #             for i in range(len(lines)):
+    #                 if i >= a:
+    #                     #print(lines[i])
+    #                     self.time2.append(float(lines[i].split()[0]))
+    #                     self.values2.append(float(lines[i].split()[1]))
+    #     except:
+    #         self.values2 = ''
+    #         pass
+    #     try:
+    #         with open(file3, 'r') as f:
+    #             lines = f.readlines()
+    #             for i in range(len(lines)):
+    #                 if i >= a:
+    #                     #print(lines[i])
+    #                     self.time3.append(float(lines[i].split()[0]))
+    #                     self.values3.append(float(lines[i].split()[1]))
+    #     except:
+    #         self.values3 = ''
+    #         pass
 
+    #     if renumber == 'true':
+    #         discontinuous_positions = []
+    #         for i in range(1, len(self.time1)):
+    #             if self.time1[i] != self.time1[i-1]+1:
+    #                 discontinuous_positions.append(i)
+    #         for i in range(len(self.time1)):
+    #             self.time1[i] = i+1
 
-    def sasa_averager(self, file1, file2, file3, ave, output_name, xaxis_name, yaxis_name):
-        a = 24
-        with open(file1, 'r') as f:
-            lines = f.readlines()
-            for i in range(len(lines)):
-                if i >= a:
-                    #print(lines[i])
-                    self.time1.append(float(lines[i].split()[0]))
-                    self.values1.append(float(lines[i].split()[1]))
-        try:
-            with open(file2, 'r') as f:
-                lines = f.readlines()
-                for i in range(len(lines)):
-                    if i >= a:
-                        #print(lines[i])
-                        self.time2.append(float(lines[i].split()[0]))
-                        self.values2.append(float(lines[i].split()[1]))
-        except:
-            self.values2 = ''
-            pass
-        try:
-            with open(file3, 'r') as f:
-                lines = f.readlines()
-                for i in range(len(lines)):
-                    if i >= a:
-                        #print(lines[i])
-                        self.time3.append(float(lines[i].split()[0]))
-                        self.values3.append(float(lines[i].split()[1]))
-        except:
-            self.values3 = ''
-            pass
+    #     # define axis is atom or residues
+    #     if xaxis_name == 0:
+    #         with open(file1, 'r') as f: # define time unit
+    #             lines = f.readlines()
+    #             if len(lines) >= 15 and '"Residue"' in lines[14]:
+    #                 x_name = 'Residue Number'
+    #             elif len(lines) >= 15 and '"Atom"' in lines[14]:
+    #                 x_name = 'Atom Number'
+    #     else:
+    #         x_name = xaxis_name
 
-        # define time unit is ps or ns
-        with open(file1, 'r') as f: # define time unit
-            lines = f.readlines()
-            if len(lines) >= 15 and '(ns)"' in lines[14]:
-                timeflag = 'ns'
-            elif len(lines) >= 15 and '(ps)"' in lines[14]:
-                timeflag = 'ps'
-        if timeflag == 'ps':
-            divisor = 1000
-            self.time1 = [x / divisor for x in self.time1]
-
-
-        # Line chart
-        plot_title = 'Solvent Accessible Surface'
-        if xaxis_name == 0:
-            x_name = 'Time (ns)'
-        else:
-            x_name = xaxis_name
-        if yaxis_name == 0:
-            y_name = 'Area (nm<sup>2</sup>)'
-        else:
-            y_name = yaxis_name
-        self.plotly_noSD(output_name, plot_title, x_name, y_name, self.time1, self.values1, self.values2, self.values3, ave)
-
-
-
-    def sasa_res_averager(self, file1, file2, file3,renumber,ave, output_name, xaxis_name, yaxis_name):
-        a = 25
-        with open(file1, 'r') as f:
-            lines = f.readlines()
-            for i in range(len(lines)):
-                if i >= a:
-                    #print(lines[i])
-                    self.time1.append(float(lines[i].split()[0]))
-                    self.values1.append(float(lines[i].split()[1]))
-                    self.sd1.append(float(lines[i].split()[2]))
-        try:
-            with open(file2, 'r') as f:
-                lines = f.readlines()
-                for i in range(len(lines)):
-                    if i >= a:
-                        #print(lines[i])
-                        self.time2.append(float(lines[i].split()[0]))
-                        self.values2.append(float(lines[i].split()[1]))
-                        self.sd2.append(float(lines[i].split()[2]))
-        except:
-            self.values2 = ''
-            self.sd2 = ''
-            pass
-        try:
-            with open(file3, 'r') as f:
-                lines = f.readlines()
-                for i in range(len(lines)):
-                    if i >= a:
-                        #print(lines[i])
-                        self.time3.append(float(lines[i].split()[0]))
-                        self.values3.append(float(lines[i].split()[1]))
-                        self.sd3.append(float(lines[i].split()[2]))
-        except:
-            self.values3 = ''
-            self.sd3 = ''
-            pass
-
-        if renumber == 'true':
-            discontinuous_positions = []
-            for i in range(1, len(self.time1)):
-                if self.time1[i] != self.time1[i-1]+1:
-                    discontinuous_positions.append(i)
-            for i in range(len(self.time1)):
-                self.time1[i] = i+1
-
-
-        # Line chart
-        plot_title_noSD = 'Area per residue over the trajectory (noSD)'
-        plot_title_SD = 'Area per residue over the trajectory (SD)'
-        if xaxis_name == 0:
-            x_name = 'Residue Number'
-        else:
-            x_name = xaxis_name
-        if yaxis_name == 0:
-            y_name = 'Area (nm<sup>2</sup>)'
-        else:
-            y_name = yaxis_name
-        self.plotly_noSD(output_name, plot_title_noSD, x_name, y_name, self.time1, self.values1, self.values2, self.values3, ave)
-        self.plotly_SD(output_name, plot_title_SD, x_name, y_name, self.time1, self.values1, self.values2, self.values3, self.sd1, self.sd2, self.sd3, ave)
+    #     plot_title = 'RMS fluctuation'
+    #     if yaxis_name == 0:
+    #         y_name = 'RMSF (nm)'
+    #     else:
+    #         y_name = yaxis_name
+    #     self.plotly_noSD(output_name, plot_title, x_name, y_name, self.time1, self.values1, self.values2, self.values3, ave)
 
 
 
 
-    def gyrate_averager(self, file1, file2, file3, ave, output_name, xaxis_name, yaxis_name):
-        a = 27
-        with open(file1, 'r') as f:
-            lines = f.readlines()
-            for i in range(len(lines)):
-                if i >= a:
-                    #print(lines[i])
-                    self.time1.append(float(lines[i].split()[0]))
-                    self.values1.append(float(lines[i].split()[1]))
-        try:
-            with open(file2, 'r') as f:
-                lines = f.readlines()
-                for i in range(len(lines)):
-                    if i >= a:
-                        #print(lines[i])
-                        self.time2.append(float(lines[i].split()[0]))
-                        self.values2.append(float(lines[i].split()[1]))
-        except:
-            self.values2 = ''
-            pass
-        try:
-            with open(file3, 'r') as f:
-                lines = f.readlines()
-                for i in range(len(lines)):
-                    if i >= a:
-                        #print(lines[i])
-                        self.time3.append(float(lines[i].split()[0]))
-                        self.values3.append(float(lines[i].split()[1]))
-        except:
-            self.values3 = ''
-            pass
 
-        try:
-            for i in [self.values1, self.values2, self.values3]:
-                self.max_value.append(max(i))
-                self.average_value.append(sum(i)/len(i))
-        except:
-            pass
 
-        # define time unit is ps or ns
-        with open(file1, 'r') as f: # define time unit
-            lines = f.readlines()
-            if len(lines) >= 15 and '(ns)"' in lines[14]:
-                timeflag = 'ns'
-            elif len(lines) >= 15 and '(ps)"' in lines[14]:
-                timeflag = 'ps'
-        if timeflag == 'ps':
-            divisor = 1000
-            self.time1 = [x / divisor for x in self.time1]
+    # def sasa_averager(self, file1, file2, file3, ave, output_name, xaxis_name, yaxis_name):
+    #     a = 24
+    #     with open(file1, 'r') as f:
+    #         lines = f.readlines()
+    #         for i in range(len(lines)):
+    #             if i >= a:
+    #                 #print(lines[i])
+    #                 self.time1.append(float(lines[i].split()[0]))
+    #                 self.values1.append(float(lines[i].split()[1]))
+    #     try:
+    #         with open(file2, 'r') as f:
+    #             lines = f.readlines()
+    #             for i in range(len(lines)):
+    #                 if i >= a:
+    #                     #print(lines[i])
+    #                     self.time2.append(float(lines[i].split()[0]))
+    #                     self.values2.append(float(lines[i].split()[1]))
+    #     except:
+    #         self.values2 = ''
+    #         pass
+    #     try:
+    #         with open(file3, 'r') as f:
+    #             lines = f.readlines()
+    #             for i in range(len(lines)):
+    #                 if i >= a:
+    #                     #print(lines[i])
+    #                     self.time3.append(float(lines[i].split()[0]))
+    #                     self.values3.append(float(lines[i].split()[1]))
+    #     except:
+    #         self.values3 = ''
+    #         pass
 
-        # Line chart
-        plot_title = 'Radius of Gyration'
-        if xaxis_name == 0:
-            x_name = 'Time (ns)'
-        else:
-            x_name = xaxis_name
-        if yaxis_name == 0:
-            y_name = 'Rg (nm)'
-        else:
-            y_name = yaxis_name
-        self.plotly_noSD(output_name, plot_title, x_name, y_name, self.time1, self.values1, self.values2, self.values3, ave)
+    #     # define time unit is ps or ns
+    #     with open(file1, 'r') as f: # define time unit
+    #         lines = f.readlines()
+    #         if len(lines) >= 15 and '(ns)"' in lines[14]:
+    #             timeflag = 'ns'
+    #         elif len(lines) >= 15 and '(ps)"' in lines[14]:
+    #             timeflag = 'ps'
+    #     if timeflag == 'ps':
+    #         divisor = 1000
+    #         self.time1 = [x / divisor for x in self.time1]
+
+
+    #     # Line chart
+    #     plot_title = 'Solvent Accessible Surface'
+    #     if xaxis_name == 0:
+    #         x_name = 'Time (ns)'
+    #     else:
+    #         x_name = xaxis_name
+    #     if yaxis_name == 0:
+    #         y_name = 'Area (nm<sup>2</sup>)'
+    #     else:
+    #         y_name = yaxis_name
+    #     self.plotly_noSD(output_name, plot_title, x_name, y_name, self.time1, self.values1, self.values2, self.values3, ave)
 
 
 
-    def dipoles_averager(self, file1, file2, file3, ave, output_name, xaxis_name, yaxis_name):
-        a = 27
-        with open(file1, 'r') as f:
-            lines = f.readlines()
-            for i in range(len(lines)):
-                if i >= a:
-                    #print(lines[i])
-                    self.time1.append(float(lines[i].split()[0]))
-                    self.values1.append(float(lines[i].split()[4]))
-        try:
-            with open(file2, 'r') as f:
-                lines = f.readlines()
-                for i in range(len(lines)):
-                    if i >= a:
-                        #print(lines[i])
-                        self.time2.append(float(lines[i].split()[0]))
-                        self.values2.append(float(lines[i].split()[4]))
-        except:
-            self.values2 = ''
-            pass
-        try:
-            with open(file3, 'r') as f:
-                lines = f.readlines()
-                for i in range(len(lines)):
-                    if i >= a:
-                        #print(lines[i])
-                        self.time3.append(float(lines[i].split()[0]))
-                        self.values3.append(float(lines[i].split()[4]))
-        except:
-            self.values3 = ''
-            pass
+    # def sasa_res_averager(self, file1, file2, file3,renumber,ave, output_name, xaxis_name, yaxis_name):
+    #     a = 25
+    #     with open(file1, 'r') as f:
+    #         lines = f.readlines()
+    #         for i in range(len(lines)):
+    #             if i >= a:
+    #                 #print(lines[i])
+    #                 self.time1.append(float(lines[i].split()[0]))
+    #                 self.values1.append(float(lines[i].split()[1]))
+    #                 self.sd1.append(float(lines[i].split()[2]))
+    #     try:
+    #         with open(file2, 'r') as f:
+    #             lines = f.readlines()
+    #             for i in range(len(lines)):
+    #                 if i >= a:
+    #                     #print(lines[i])
+    #                     self.time2.append(float(lines[i].split()[0]))
+    #                     self.values2.append(float(lines[i].split()[1]))
+    #                     self.sd2.append(float(lines[i].split()[2]))
+    #     except:
+    #         self.values2 = ''
+    #         self.sd2 = ''
+    #         pass
+    #     try:
+    #         with open(file3, 'r') as f:
+    #             lines = f.readlines()
+    #             for i in range(len(lines)):
+    #                 if i >= a:
+    #                     #print(lines[i])
+    #                     self.time3.append(float(lines[i].split()[0]))
+    #                     self.values3.append(float(lines[i].split()[1]))
+    #                     self.sd3.append(float(lines[i].split()[2]))
+    #     except:
+    #         self.values3 = ''
+    #         self.sd3 = ''
+    #         pass
 
-        try:
-            for i in [self.values1, self.values2, self.values3]:
-                self.max_value.append(max(i))
-                self.average_value.append(sum(i)/len(i))
-        except:
-            pass
-
-        # define time unit is ps or ns
-        with open(file1, 'r') as f: # define time unit
-            lines = f.readlines()
-            if len(lines) >= 15 and '(ns)"' in lines[14]:
-                timeflag = 'ns'
-            elif len(lines) >= 15 and '(ps)"' in lines[14]:
-                timeflag = 'ps'
-        if timeflag == 'ps':
-            divisor = 1000
-            self.time1 = [x / divisor for x in self.time1]
-
-        # Line chart
-        plot_title = 'Total dipole moment of the simulation box vs. time'
-        if xaxis_name == 0:
-            x_name = 'Time (ns)'
-        else:
-            x_name = xaxis_name
-        if yaxis_name == 0:
-            y_name = 'Total Dipole Moment (Debye)'
-        else:
-            y_name = yaxis_name
+    #     if renumber == 'true':
+    #         discontinuous_positions = []
+    #         for i in range(1, len(self.time1)):
+    #             if self.time1[i] != self.time1[i-1]+1:
+    #                 discontinuous_positions.append(i)
+    #         for i in range(len(self.time1)):
+    #             self.time1[i] = i+1
 
 
-
-        self.plotly_noSD(output_name, plot_title, x_name, y_name, self.time1, self.values1, self.values2, self.values3, ave)
-
-
-    def distance_averager(self, file1, file2, file3, ave, output_name, xaxis_name, yaxis_name):
-        a = 24
-        with open(file1, 'r') as f:
-            lines = f.readlines()
-            for i in range(len(lines)):
-                if i >= a:
-                    #print(lines[i])
-                    self.time1.append(float(lines[i].split()[0]))
-                    self.values1.append(float(lines[i].split()[1]))
-        try:
-            with open(file2, 'r') as f:
-                lines = f.readlines()
-                for i in range(len(lines)):
-                    if i >= a:
-                        #print(lines[i])
-                        self.time2.append(float(lines[i].split()[0]))
-                        self.values2.append(float(lines[i].split()[1]))
-        except:
-            self.values2 = ''
-            pass
-        try:
-            with open(file3, 'r') as f:
-                lines = f.readlines()
-                for i in range(len(lines)):
-                    if i >= a:
-                        #print(lines[i])
-                        self.time3.append(float(lines[i].split()[0]))
-                        self.values3.append(float(lines[i].split()[1]))
-        except:
-            self.values3 = ''
-            pass
-
-        # calculate the average and max value for each replica
-        try:
-            for i in [self.values1, self.values2, self.values3]:
-                self.max_value.append(max(i))
-                self.average_value.append(sum(i)/len(i))
-        except:
-            pass
-
-        # define time unit is ps or ns
-        with open(file1, 'r') as f: # define time unit
-            lines = f.readlines()
-            if len(lines) >= 15 and '(ns)"' in lines[14]:
-                timeflag = 'ns'
-            elif len(lines) >= 15 and '(ps)"' in lines[14]:
-                timeflag = 'ps'
-        if timeflag == 'ps':
-            divisor = 1000
-            self.time1 = [x / divisor for x in self.time1]
-
-
-        # Line chart
-        plot_title = 'Distance'
-        if xaxis_name == 0:
-            x_name = 'Time (ns)'
-        else:
-            x_name = xaxis_name
-        if yaxis_name == 0:
-            y_name = 'Distance (nm)'
-        else:
-            y_name = yaxis_name
-        self.plotly_noSD(output_name, plot_title, x_name, y_name, self.time1, self.values1, self.values2, self.values3, ave)
-
-    def rdf_averager(self, file1, file2, file3, ave, output_name, xaxis_name, yaxis_name, rdf_cutoff):
-        a = 25
-        with open(file1, 'r') as f:
-            lines = f.readlines()
-            for i in range(len(lines)):
-                if i >= a:
-                    if rdf_cutoff != 0 and float(lines[i].split()[0]) <= rdf_cutoff:
-                    #print(lines[i])
-                        self.time1.append(float(lines[i].split()[0]))
-                        self.values1.append(float(lines[i].split()[1]))
-                    elif rdf_cutoff == 0:
-                        self.time1.append(float(lines[i].split()[0]))
-                        self.values1.append(float(lines[i].split()[1]))
-        try:
-            with open(file2, 'r') as f:
-                lines = f.readlines()
-                for i in range(len(lines)):
-                    if i >= a:
-                        if rdf_cutoff != 0 and float(lines[i].split()[0]) <= rdf_cutoff:
-                            #print(lines[i])
-                            self.time2.append(float(lines[i].split()[0]))
-                            self.values2.append(float(lines[i].split()[1]))
-                        elif rdf_cutoff == 0:
-                            self.time2.append(float(lines[i].split()[0]))
-                            self.values2.append(float(lines[i].split()[1]))
-        except:
-            self.values2 = ''
-            pass
-        try:
-            with open(file3, 'r') as f:
-                lines = f.readlines()
-                for i in range(len(lines)):
-                    if i >= a:
-                        if rdf_cutoff != 0 and float(lines[i].split()[0]) <= rdf_cutoff:
-                            #print(lines[i])
-                            self.time3.append(float(lines[i].split()[0]))
-                            self.values3.append(float(lines[i].split()[1]))
-                        elif rdf_cutoff == 0:
-                            self.time3.append(float(lines[i].split()[0]))
-                            self.values3.append(float(lines[i].split()[1]))
-        except:
-            self.values3 = ''
-            pass
-
-        # calculate the average and max value for each replica
-        try:
-            for i in [self.values1, self.values2, self.values3]:
-                self.max_value.append(max(i))
-                self.average_value.append(sum(i)/len(i))
-        except:
-            pass
-
-        # define distance unit is nm
+    #     # Line chart
+    #     plot_title_noSD = 'Area per residue over the trajectory (noSD)'
+    #     plot_title_SD = 'Area per residue over the trajectory (SD)'
+    #     if xaxis_name == 0:
+    #         x_name = 'Residue Number'
+    #     else:
+    #         x_name = xaxis_name
+    #     if yaxis_name == 0:
+    #         y_name = 'Area (nm<sup>2</sup>)'
+    #     else:
+    #         y_name = yaxis_name
+    #     self.plotly_noSD(output_name, plot_title_noSD, x_name, y_name, self.time1, self.values1, self.values2, self.values3, ave)
+    #     self.plotly_SD(output_name, plot_title_SD, x_name, y_name, self.time1, self.values1, self.values2, self.values3, self.sd1, self.sd2, self.sd3, ave)
 
 
 
-        # Line chart
-        plot_title = 'RDF'
-        if xaxis_name == 0:
-            x_name = 'r (nm)'
-        else:
-            x_name = xaxis_name
-        if yaxis_name == 0:
-            y_name = 'g(r)'
-        else:
-            y_name = yaxis_name
-        self.plotly_noSD(output_name, plot_title, x_name, y_name, self.time1, self.values1, self.values2, self.values3, ave)
+
+    # def gyrate_averager(self, file1, file2, file3, ave, output_name, xaxis_name, yaxis_name):
+    #     a = 27
+    #     with open(file1, 'r') as f:
+    #         lines = f.readlines()
+    #         for i in range(len(lines)):
+    #             if i >= a:
+    #                 #print(lines[i])
+    #                 self.time1.append(float(lines[i].split()[0]))
+    #                 self.values1.append(float(lines[i].split()[1]))
+    #     try:
+    #         with open(file2, 'r') as f:
+    #             lines = f.readlines()
+    #             for i in range(len(lines)):
+    #                 if i >= a:
+    #                     #print(lines[i])
+    #                     self.time2.append(float(lines[i].split()[0]))
+    #                     self.values2.append(float(lines[i].split()[1]))
+    #     except:
+    #         self.values2 = ''
+    #         pass
+    #     try:
+    #         with open(file3, 'r') as f:
+    #             lines = f.readlines()
+    #             for i in range(len(lines)):
+    #                 if i >= a:
+    #                     #print(lines[i])
+    #                     self.time3.append(float(lines[i].split()[0]))
+    #                     self.values3.append(float(lines[i].split()[1]))
+    #     except:
+    #         self.values3 = ''
+    #         pass
+
+    #     try:
+    #         for i in [self.values1, self.values2, self.values3]:
+    #             self.max_value.append(max(i))
+    #             self.average_value.append(sum(i)/len(i))
+    #     except:
+    #         pass
+
+    #     # define time unit is ps or ns
+    #     with open(file1, 'r') as f: # define time unit
+    #         lines = f.readlines()
+    #         if len(lines) >= 15 and '(ns)"' in lines[14]:
+    #             timeflag = 'ns'
+    #         elif len(lines) >= 15 and '(ps)"' in lines[14]:
+    #             timeflag = 'ps'
+    #     if timeflag == 'ps':
+    #         divisor = 1000
+    #         self.time1 = [x / divisor for x in self.time1]
+
+    #     # Line chart
+    #     plot_title = 'Radius of Gyration'
+    #     if xaxis_name == 0:
+    #         x_name = 'Time (ns)'
+    #     else:
+    #         x_name = xaxis_name
+    #     if yaxis_name == 0:
+    #         y_name = 'Rg (nm)'
+    #     else:
+    #         y_name = yaxis_name
+    #     self.plotly_noSD(output_name, plot_title, x_name, y_name, self.time1, self.values1, self.values2, self.values3, ave)
 
 
-    def plotly_noSD(self, output_file_name, plot_title, x_name, y_name, time1, values1, values2, values3, ave):
-            trace1 = go.Scatter(x=time1, y=values1, name='Replica 1')
-            try:
-                trace2 = go.Scatter(x=time1, y=values2, name='Replica 2')
-            except:
-                trace2 = 0
-                pass
-            try:
-                trace3 = go.Scatter(x=time1, y=values3, name='Replica 3')
-            except:
-                trace3 = 0
-                pass
-            # data = [trace1, trace2, trace3]
-            data = []
-            for i in trace1, trace2, trace3:
-                if i != 0:
-                    data.append(i)
 
-            layout = go.Layout(title=plot_title, title_x=0.5, title_y=1, font=dict(size=24),
-                               xaxis=dict(title=x_name, titlefont=dict(size=40, color='black', family='Arial'), zeroline=False, autorange=True,
-                                          showgrid=True, gridwidth=1, gridcolor='rgba(235,240,248,100)', tickfont=dict(size=30)),
-                               yaxis=dict(title=y_name, titlefont=dict(size=40, color='black', family='Arial'), zeroline=False, autorange=True,
-                                          showgrid=True, gridwidth=1, gridcolor='rgba(235,240,248,100)', tickfont=dict(size=30)),
-                               legend=dict(x=1, y=1, orientation='v', font=dict(size=30)), showlegend=True,
-                               plot_bgcolor='rgba(255, 255, 255, 0.1)',
-                               paper_bgcolor='rgba(255, 255, 255, 0.2)')
-            fig = go.Figure(data=data, layout=layout)
-            # fig.show()
-            pio.write_image(fig, output_file_name)
-            try:
-                if int(ave) == 3:
-                    average_value = [(values1[i] + values2[i] + values3[i]) / 3 for i in range(len(values1))]
-                elif int(ave) == 2:
-                    average_value = [(values1[i] + values2[i]) / 2 for i in range(len(values1))]
-                trace_ave = trace1 = go.Scatter(x=time1, y=average_value, name='Mean Value')
-                data_ave = [trace_ave]
-                fig_ave = go.Figure(data=data_ave, layout=layout)
-                pio.write_image(fig_ave, 'mean_'+output_file_name)
-            except:
-                pass
+    # def dipoles_averager(self, file1, file2, file3, ave, output_name, xaxis_name, yaxis_name):
+    #     a = 27
+    #     with open(file1, 'r') as f:
+    #         lines = f.readlines()
+    #         for i in range(len(lines)):
+    #             if i >= a:
+    #                 #print(lines[i])
+    #                 self.time1.append(float(lines[i].split()[0]))
+    #                 self.values1.append(float(lines[i].split()[4]))
+    #     try:
+    #         with open(file2, 'r') as f:
+    #             lines = f.readlines()
+    #             for i in range(len(lines)):
+    #                 if i >= a:
+    #                     #print(lines[i])
+    #                     self.time2.append(float(lines[i].split()[0]))
+    #                     self.values2.append(float(lines[i].split()[4]))
+    #     except:
+    #         self.values2 = ''
+    #         pass
+    #     try:
+    #         with open(file3, 'r') as f:
+    #             lines = f.readlines()
+    #             for i in range(len(lines)):
+    #                 if i >= a:
+    #                     #print(lines[i])
+    #                     self.time3.append(float(lines[i].split()[0]))
+    #                     self.values3.append(float(lines[i].split()[4]))
+    #     except:
+    #         self.values3 = ''
+    #         pass
+
+    #     try:
+    #         for i in [self.values1, self.values2, self.values3]:
+    #             self.max_value.append(max(i))
+    #             self.average_value.append(sum(i)/len(i))
+    #     except:
+    #         pass
+
+    #     # define time unit is ps or ns
+    #     with open(file1, 'r') as f: # define time unit
+    #         lines = f.readlines()
+    #         if len(lines) >= 15 and '(ns)"' in lines[14]:
+    #             timeflag = 'ns'
+    #         elif len(lines) >= 15 and '(ps)"' in lines[14]:
+    #             timeflag = 'ps'
+    #     if timeflag == 'ps':
+    #         divisor = 1000
+    #         self.time1 = [x / divisor for x in self.time1]
+
+    #     # Line chart
+    #     plot_title = 'Total dipole moment of the simulation box vs. time'
+    #     if xaxis_name == 0:
+    #         x_name = 'Time (ns)'
+    #     else:
+    #         x_name = xaxis_name
+    #     if yaxis_name == 0:
+    #         y_name = 'Total Dipole Moment (Debye)'
+    #     else:
+    #         y_name = yaxis_name
 
 
-    def plotly_SD(self, output_file_name, plot_title, x_name, y_name, time1, values1, values2, values3, sd1, sd2, sd3, ave):
-            trace1 = go.Scatter(x=time1, y=values1, name='Replica 1')
-            error_y1 = dict(type='data', array=sd1, visible=True, thickness=1)
-            trace1.update(error_y=error_y1)
-            try:
-                trace2 = go.Scatter(x=time1, y=values2, name='Replica 2')
-                error_y2 = dict(type='data', array=sd2, visible=True, thickness=1)
-                trace2.update(error_y=error_y2)
-            except:
-                trace2 = 0
-                pass
-            try:
-                trace3 = go.Scatter(x=time1, y=values3, name='Replica 3')
-                error_y3 = dict(type='data', array=sd3, visible=True, thickness=1)
-                trace3.update(error_y=error_y3)
-            except:
-                trace3 = 0
-                pass
 
-            # data = [trace1, trace2, trace3]
-            data = []
-            for i in trace1, trace2, trace3:
-                if i != 0:
-                    data.append(i)
-            layout = go.Layout(title=plot_title, title_x=0.5, title_y=1, font=dict(size=24),
-                               xaxis=dict(title=x_name, titlefont=dict(size=40, color='black', family='Arial'), zeroline=False, autorange=True,
-                                          showgrid=True, gridwidth=1, gridcolor='rgba(235,240,248,100)', tickfont=dict(size=30)),
-                               yaxis=dict(title=y_name, titlefont=dict(size=40, color='black', family='Arial'), zeroline=False, autorange=True,
-                                          showgrid=True, gridwidth=1, gridcolor='rgba(235,240,248,100)', tickfont=dict(size=30)),
-                               legend=dict(x=1, y=1, orientation='v', font=dict(size=30)),
-                               plot_bgcolor='rgba(255, 255, 255, 0.1)',
-                               paper_bgcolor='rgba(255, 255, 255, 0.2)')
-            fig = go.Figure(data=data, layout=layout)
-            # fig.show()
-            pio.write_image(fig, 'SD_' + output_file_name)
-            try:
-                if int(ave) == 3:
-                    average_value = [(values1[i] + values2[i] + values3[i]) / 3 for i in range(len(values1))]
-                    average_sd = [(sd1[i] + sd2[i] + sd3[i]) / 3 for i in range(len(sd1))]
-                elif int(ave) == 2:
-                    average_value = [(values1[i] + values2[i]) / 2 for i in range(len(values1))]
-                    average_sd = [(sd1[i] + sd2[i]) / 2 for i in range(len(sd1))]
-                trace_ave = go.Scatter(x=time1, y=average_value, name='Mean Value')
-                error_y_ave = dict(type='data', array=average_sd, visible=True, thickness=1)
-                trace_ave.update(error_y=error_y_ave)
-                data_ave = [trace_ave]
-                fig_ave = go.Figure(data=data_ave, layout=layout)
-                pio.write_image(fig_ave, 'SD_mean_'+output_file_name)
-            except:
-                pass
+    #     self.plotly_noSD(output_name, plot_title, x_name, y_name, self.time1, self.values1, self.values2, self.values3, ave)
+
+
+    # def distance_averager(self, file1, file2, file3, ave, output_name, xaxis_name, yaxis_name):
+    #     a = 24
+    #     with open(file1, 'r') as f:
+    #         lines = f.readlines()
+    #         for i in range(len(lines)):
+    #             if i >= a:
+    #                 #print(lines[i])
+    #                 self.time1.append(float(lines[i].split()[0]))
+    #                 self.values1.append(float(lines[i].split()[1]))
+    #     try:
+    #         with open(file2, 'r') as f:
+    #             lines = f.readlines()
+    #             for i in range(len(lines)):
+    #                 if i >= a:
+    #                     #print(lines[i])
+    #                     self.time2.append(float(lines[i].split()[0]))
+    #                     self.values2.append(float(lines[i].split()[1]))
+    #     except:
+    #         self.values2 = ''
+    #         pass
+    #     try:
+    #         with open(file3, 'r') as f:
+    #             lines = f.readlines()
+    #             for i in range(len(lines)):
+    #                 if i >= a:
+    #                     #print(lines[i])
+    #                     self.time3.append(float(lines[i].split()[0]))
+    #                     self.values3.append(float(lines[i].split()[1]))
+    #     except:
+    #         self.values3 = ''
+    #         pass
+
+    #     # calculate the average and max value for each replica
+    #     try:
+    #         for i in [self.values1, self.values2, self.values3]:
+    #             self.max_value.append(max(i))
+    #             self.average_value.append(sum(i)/len(i))
+    #     except:
+    #         pass
+
+    #     # define time unit is ps or ns
+    #     with open(file1, 'r') as f: # define time unit
+    #         lines = f.readlines()
+    #         if len(lines) >= 15 and '(ns)"' in lines[14]:
+    #             timeflag = 'ns'
+    #         elif len(lines) >= 15 and '(ps)"' in lines[14]:
+    #             timeflag = 'ps'
+    #     if timeflag == 'ps':
+    #         divisor = 1000
+    #         self.time1 = [x / divisor for x in self.time1]
+
+
+    #     # Line chart
+    #     plot_title = 'Distance'
+    #     if xaxis_name == 0:
+    #         x_name = 'Time (ns)'
+    #     else:
+    #         x_name = xaxis_name
+    #     if yaxis_name == 0:
+    #         y_name = 'Distance (nm)'
+    #     else:
+    #         y_name = yaxis_name
+    #     self.plotly_noSD(output_name, plot_title, x_name, y_name, self.time1, self.values1, self.values2, self.values3, ave)
+
+    # def rdf_averager(self, file1, file2, file3, ave, output_name, xaxis_name, yaxis_name, rdf_cutoff):
+    #     a = 25
+    #     with open(file1, 'r') as f:
+    #         lines = f.readlines()
+    #         for i in range(len(lines)):
+    #             if i >= a:
+    #                 if rdf_cutoff != 0 and float(lines[i].split()[0]) <= rdf_cutoff:
+    #                 #print(lines[i])
+    #                     self.time1.append(float(lines[i].split()[0]))
+    #                     self.values1.append(float(lines[i].split()[1]))
+    #                 elif rdf_cutoff == 0:
+    #                     self.time1.append(float(lines[i].split()[0]))
+    #                     self.values1.append(float(lines[i].split()[1]))
+    #     try:
+    #         with open(file2, 'r') as f:
+    #             lines = f.readlines()
+    #             for i in range(len(lines)):
+    #                 if i >= a:
+    #                     if rdf_cutoff != 0 and float(lines[i].split()[0]) <= rdf_cutoff:
+    #                         #print(lines[i])
+    #                         self.time2.append(float(lines[i].split()[0]))
+    #                         self.values2.append(float(lines[i].split()[1]))
+    #                     elif rdf_cutoff == 0:
+    #                         self.time2.append(float(lines[i].split()[0]))
+    #                         self.values2.append(float(lines[i].split()[1]))
+    #     except:
+    #         self.values2 = ''
+    #         pass
+    #     try:
+    #         with open(file3, 'r') as f:
+    #             lines = f.readlines()
+    #             for i in range(len(lines)):
+    #                 if i >= a:
+    #                     if rdf_cutoff != 0 and float(lines[i].split()[0]) <= rdf_cutoff:
+    #                         #print(lines[i])
+    #                         self.time3.append(float(lines[i].split()[0]))
+    #                         self.values3.append(float(lines[i].split()[1]))
+    #                     elif rdf_cutoff == 0:
+    #                         self.time3.append(float(lines[i].split()[0]))
+    #                         self.values3.append(float(lines[i].split()[1]))
+    #     except:
+    #         self.values3 = ''
+    #         pass
+
+    #     # calculate the average and max value for each replica
+    #     try:
+    #         for i in [self.values1, self.values2, self.values3]:
+    #             self.max_value.append(max(i))
+    #             self.average_value.append(sum(i)/len(i))
+    #     except:
+    #         pass
+
+    #     # define distance unit is nm
+
+
+
+    #     # Line chart
+    #     plot_title = 'RDF'
+    #     if xaxis_name == 0:
+    #         x_name = 'r (nm)'
+    #     else:
+    #         x_name = xaxis_name
+    #     if yaxis_name == 0:
+    #         y_name = 'g(r)'
+    #     else:
+    #         y_name = yaxis_name
+    #     self.plotly_noSD(output_name, plot_title, x_name, y_name, self.time1, self.values1, self.values2, self.values3, ave)
+
+
+    # def plotly_noSD(self, output_file_name, plot_title, x_name, y_name, time1, values1, values2, values3, ave):
+    #         trace1 = go.Scatter(x=time1, y=values1, name='Replica 1')
+    #         try:
+    #             trace2 = go.Scatter(x=time1, y=values2, name='Replica 2')
+    #         except:
+    #             trace2 = 0
+    #             pass
+    #         try:
+    #             trace3 = go.Scatter(x=time1, y=values3, name='Replica 3')
+    #         except:
+    #             trace3 = 0
+    #             pass
+    #         # data = [trace1, trace2, trace3]
+    #         data = []
+    #         for i in trace1, trace2, trace3:
+    #             if i != 0:
+    #                 data.append(i)
+
+    #         layout = go.Layout(title=plot_title, title_x=0.5, title_y=1, font=dict(size=24),
+    #                            xaxis=dict(title=x_name, titlefont=dict(size=40, color='black', family='Arial'), zeroline=False, autorange=True,
+    #                                       showgrid=True, gridwidth=1, gridcolor='rgba(235,240,248,100)', tickfont=dict(size=30)),
+    #                            yaxis=dict(title=y_name, titlefont=dict(size=40, color='black', family='Arial'), zeroline=False, autorange=True,
+    #                                       showgrid=True, gridwidth=1, gridcolor='rgba(235,240,248,100)', tickfont=dict(size=30)),
+    #                            legend=dict(x=1, y=1, orientation='v', font=dict(size=30)), showlegend=True,
+    #                            plot_bgcolor='rgba(255, 255, 255, 0.1)',
+    #                            paper_bgcolor='rgba(255, 255, 255, 0.2)')
+    #         fig = go.Figure(data=data, layout=layout)
+    #         # fig.show()
+    #         pio.write_image(fig, output_file_name)
+    #         try:
+    #             if int(ave) == 3:
+    #                 average_value = [(values1[i] + values2[i] + values3[i]) / 3 for i in range(len(values1))]
+    #             elif int(ave) == 2:
+    #                 average_value = [(values1[i] + values2[i]) / 2 for i in range(len(values1))]
+    #             trace_ave = trace1 = go.Scatter(x=time1, y=average_value, name='Mean Value')
+    #             data_ave = [trace_ave]
+    #             fig_ave = go.Figure(data=data_ave, layout=layout)
+    #             pio.write_image(fig_ave, 'mean_'+output_file_name)
+    #         except:
+    #             pass
+
+
+    # def plotly_SD(self, output_file_name, plot_title, x_name, y_name, time1, values1, values2, values3, sd1, sd2, sd3, ave):
+    #         trace1 = go.Scatter(x=time1, y=values1, name='Replica 1')
+    #         error_y1 = dict(type='data', array=sd1, visible=True, thickness=1)
+    #         trace1.update(error_y=error_y1)
+    #         try:
+    #             trace2 = go.Scatter(x=time1, y=values2, name='Replica 2')
+    #             error_y2 = dict(type='data', array=sd2, visible=True, thickness=1)
+    #             trace2.update(error_y=error_y2)
+    #         except:
+    #             trace2 = 0
+    #             pass
+    #         try:
+    #             trace3 = go.Scatter(x=time1, y=values3, name='Replica 3')
+    #             error_y3 = dict(type='data', array=sd3, visible=True, thickness=1)
+    #             trace3.update(error_y=error_y3)
+    #         except:
+    #             trace3 = 0
+    #             pass
+
+    #         # data = [trace1, trace2, trace3]
+    #         data = []
+    #         for i in trace1, trace2, trace3:
+    #             if i != 0:
+    #                 data.append(i)
+    #         layout = go.Layout(title=plot_title, title_x=0.5, title_y=1, font=dict(size=24),
+    #                            xaxis=dict(title=x_name, titlefont=dict(size=40, color='black', family='Arial'), zeroline=False, autorange=True,
+    #                                       showgrid=True, gridwidth=1, gridcolor='rgba(235,240,248,100)', tickfont=dict(size=30)),
+    #                            yaxis=dict(title=y_name, titlefont=dict(size=40, color='black', family='Arial'), zeroline=False, autorange=True,
+    #                                       showgrid=True, gridwidth=1, gridcolor='rgba(235,240,248,100)', tickfont=dict(size=30)),
+    #                            legend=dict(x=1, y=1, orientation='v', font=dict(size=30)),
+    #                            plot_bgcolor='rgba(255, 255, 255, 0.1)',
+    #                            paper_bgcolor='rgba(255, 255, 255, 0.2)')
+    #         fig = go.Figure(data=data, layout=layout)
+    #         # fig.show()
+    #         pio.write_image(fig, 'SD_' + output_file_name)
+    #         try:
+    #             if int(ave) == 3:
+    #                 average_value = [(values1[i] + values2[i] + values3[i]) / 3 for i in range(len(values1))]
+    #                 average_sd = [(sd1[i] + sd2[i] + sd3[i]) / 3 for i in range(len(sd1))]
+    #             elif int(ave) == 2:
+    #                 average_value = [(values1[i] + values2[i]) / 2 for i in range(len(values1))]
+    #                 average_sd = [(sd1[i] + sd2[i]) / 2 for i in range(len(sd1))]
+    #             trace_ave = go.Scatter(x=time1, y=average_value, name='Mean Value')
+    #             error_y_ave = dict(type='data', array=average_sd, visible=True, thickness=1)
+    #             trace_ave.update(error_y=error_y_ave)
+    #             data_ave = [trace_ave]
+    #             fig_ave = go.Figure(data=data_ave, layout=layout)
+    #             pio.write_image(fig_ave, 'SD_mean_'+output_file_name)
+    #         except:
+    #             pass
 
 
     def plotly_multy(self, flag, multi_files, xaxis_name, yaxis_name, renumber, ave, output_file_name, rdf_cutoff, plot_name):
+        Plotly = ['#636EFA', '#EF553B', '#00CC96', '#AB63FA', '#FFA15A', '#19D3F3', '#FF6692', '#B6E880', '#FF97FF', '#FECB52']
         a=1
         data = []
 
@@ -948,10 +967,21 @@ class plotly_go():
             if x_name == 'Residue' and renumber == 'true':
                 for k in range(len(locals()["x_" + str(a)])):
                     locals()["x_" + str(a)][k] = k+1
-
-            ################## define traces ##################
-            locals()["trace" + str(a)] = go.Scatter(x=locals()["x_" + str(a)], y=locals()["y_" + str(a)], name=str(i).split('.')[0])
-            data.append(locals()["trace" + str(a)])
+            # find out if the residues indexs are consited        
+            if x_name == 'Residue':
+                seq1, seq2 = self.consist(locals()["x_" + str(a)])
+                if seq2 == []:
+                    ################## define traces ##################
+                    locals()["trace" + str(a)] = go.Scatter(x=locals()["x_" + str(a)], y=locals()["y_" + str(a)], name=str(i).split('.')[0])
+                    data.append(locals()["trace" + str(a)])
+                else:
+                    locals()["trace1" + str(a)] = go.Scatter(x=seq1, y=locals()["y_" + str(a)][:len(seq1)], line=dict(color=Plotly[a-1]), name=str(i).split('.')[0])
+                    locals()["trace2" + str(a)] = go.Scatter(x=seq2, y=locals()["y_" + str(a)][-len(seq2):], line=dict(color=Plotly[a-1]), showlegend=False)
+                    data.append(locals()["trace1" + str(a)])
+                    data.append(locals()["trace2" + str(a)])
+            else:
+                locals()["trace" + str(a)] = go.Scatter(x=locals()["x_" + str(a)], y=locals()["y_" + str(a)], name=str(i).split('.')[0])
+                data.append(locals()["trace" + str(a)])
             a += 1
         ################## test if time unit is ns, if not then change it from ps to ns ##################
         if x_name == 'Time (ps)':
@@ -985,8 +1015,26 @@ class plotly_go():
                 else:
                     average_value.pop()
             data = []
-            trace_ave = go.Scatter(x=locals()["x_" + str(a)], y=average_value, name='Average Values')
-            data.append(trace_ave)
+            # trace_ave = go.Scatter(x=locals()["x_" + str(a)], y=average_value, name='Average Values')
+            # data.append(trace_ave)
+            
+            # find out if the residues indexs are consited        
+            if x_name == 'Residue':
+                seq1, seq2 = self.consist(locals()["x_" + str(a)])
+                if seq2 == []:
+                    ################## define traces ##################
+                    trace_ave = go.Scatter(x=locals()["x_" + str(a)], y=average_value, name='Average Values')
+                    data.append(trace_ave)
+                else:
+                    trace_ave1 = go.Scatter(x=seq1, y=average_value[:len(seq1)], line=dict(color=Plotly[0]), name='Average Values')
+                    trace_ave2 = go.Scatter(x=seq2, y=average_value[-len(seq2):], line=dict(color=Plotly[0]), showlegend=False)
+                    data.append(trace_ave1)
+                    data.append(trace_ave2)
+            else:
+                trace_ave = go.Scatter(x=locals()["x_" + str(a)], y=average_value, name='Average Values')
+                data.append(trace_ave)
+
+            
             layout = go.Layout(title=plot_title, title_x=0.5, title_y=1, font=dict(size=24),
                                xaxis=dict(title=x_name, titlefont=dict(size=40, color='black', family='Arial'), zeroline=False, autorange=True,
                                           showgrid=True, gridwidth=1, gridcolor='rgba(235,240,248,100)', tickfont=dict(size=30)),
