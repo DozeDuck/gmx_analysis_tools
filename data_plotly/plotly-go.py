@@ -84,7 +84,7 @@ except getopt.GetoptError:
 
 for opt, arg in opts:
     if opt == '-h':
-        print('Version: 1.4 \
+        print('Version: 1.5 \
           \nCurrently it works for rmsd, rmsf, sasa_time, sasa_residue, gyration, dipole movement, rdf, distance, PCA  \
           \nIt can read one, two or three same type files \
           \n-o output_name.png, suitable file format for output: png, jpg, jpeg, webp, svg, pdf, eps, json \
