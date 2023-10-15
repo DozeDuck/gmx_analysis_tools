@@ -1069,7 +1069,7 @@ class plotly_go():
                     
         ################## if user ask for movement average ##################
         if move_average != 0:
-            ma_plot_title = plot_title + "<br><sup>Moving Average (window=" + str(move_average) + ")</sup>"
+            ma_plot_title = plot_title + "<br><sup>Moving Average (window size=" + str(move_average) + ")</sup>"
             ma_output_file_name = "MovingAverage_" + output_file_name
             data = []
             # 窗口大小
