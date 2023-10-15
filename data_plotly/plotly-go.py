@@ -34,9 +34,10 @@ pca = 0
 rscript = 0
 nbin = 500
 size = 400
+move_average = 0
 
 try:
-    opts, args_lala = getopt.getopt(args,"f:s:t:r:a:o:x:y:c:m:p:l:j:n:z:h",["file1=",
+    opts, args_lala = getopt.getopt(args,"f:s:t:r:a:o:x:y:c:m:p:l:j:n:z:b:h",["file1=",
                                              "file2=",
                                              "file3=",
                                              "renumber=",
@@ -51,9 +52,10 @@ try:
                                              "pca",
                                              "nbin=",
                                              "size=",
+                                             "move_average=",
                                              "help"])
 except getopt.GetoptError:
-    print('Version: 1.4 \
+    print('Version: 1.5 \
           \nCurrently it works for rmsd, rmsf, sasa_time, sasa_residue, gyration, dipole movement, rdf, distance, PCA  \
           \nIt can read one, two or three same type files \
           \n-o output_name.png, suitable file format for output: png, jpg, jpeg, webp, svg, pdf, eps, json \
@@ -75,7 +77,7 @@ except getopt.GetoptError:
           \n ./plotly_go -f rmsf1.xvg -s rmsf2.xvg -o rmsf12.png -a 2 \
           \n ./plotly_go -f sasa1.xvg -s sasa2.xvg -t sasa3.xvg -o sasa123.png -r true -x "Time (ns)" -y "SASA (nm<sup>2</sup>)" \
           \n ./plotly_go -f rdf1.xvg -s rdf2.xvg -t rdf3.xvg -o rdf123.png -c 4.7 -o rdf123.png \
-          \n ./plotly_go -m sasa1.xvg sasa2.xvg sasa3.xvg sasa4.xvg sasa5.xvg sasa6.xvg sasa7.xvg sasa8.xvg sasa9.xvg -o multy_sasa_9.png -a true \
+          \n ./plotly_go -m sasa1.xvg sasa2.xvg sasa3.xvg sasa4.xvg sasa5.xvg sasa6.xvg sasa7.xvg sasa8.xvg sasa9.xvg -o multy_sasa_9.png -a true -b 10 \
           \n ./plotly_go -m resarea1.xvg resarea2.xvg resarea3.xvg -o test_resare123.png -a true -r true \
           \n ./plotly_go -m 2dproj1.xvg -n 1000 -z 500 -o pca_myname.png')
     sys.exit(2)
@@ -103,7 +105,7 @@ for opt, arg in opts:
           \n ./plotly_go -f rmsd1.xvg -s rmsd2.xvg -t rmsd3.xvg -o rmsd123.png -a 3\
           \n ./plotly_go -f sasa1.xvg -s sasa2.xvg -t sasa3.xvg -o sasa123.png -r true -x "Time (ns)" -y "SASA (nm<sup>2</sup>)" \
           \n ./plotly_go -f rdf1.xvg -s rdf2.xvg -t rdf3.xvg -o rdf123.png -c 4.7 -o rdf123.png \
-          \n ./plotly_go -m sasa1.xvg sasa2.xvg sasa3.xvg sasa4.xvg sasa5.xvg sasa6.xvg sasa7.xvg sasa8.xvg sasa9.xvg -o multy_sasa_9.png -a true \
+          \n ./plotly_go -m sasa1.xvg sasa2.xvg sasa3.xvg sasa4.xvg sasa5.xvg sasa6.xvg sasa7.xvg sasa8.xvg sasa9.xvg -o multy_sasa_9.png -a true -b 10 \
           \n ./plotly_go -m resarea1.xvg resarea2.xvg resarea3.xvg -o test_resare123.png -a true -r true \
           \n ./plotly_go -m 2dproj1.xvg -n 1000 -z 500 -o pca_myname.png')
         sys.exit()
@@ -136,6 +138,8 @@ for opt, arg in opts:
         nbin = int(arg)
     elif opt in ("-z", "--size"):
         size = int(arg)
+    elif opt in ("-b", "--move_average"):
+        move_average = int(arg)
     elif opt in ("-m", "--multi_files"):
         value = 1
         multi_files = []
@@ -151,7 +155,7 @@ for opt, arg in opts:
         for value in multi_files:
             args.remove(value)
         try:
-            opts, args_lala = getopt.getopt(args,"f:s:t:r:a:o:x:y:c:m:p:l:j:n:z:h",["file1=",
+            opts, args_lala = getopt.getopt(args,"f:s:t:r:a:o:x:y:c:m:p:l:j:n:z:b:h",["file1=",
                                                      "file2=",
                                                      "file3=",
                                                      "renumber=",
@@ -166,6 +170,7 @@ for opt, arg in opts:
                                                      "pca",
                                                      "nbin=",
                                                      "size=",
+                                                     "move_average=",
                                                      "help"])
         except getopt.GetoptError:
             sys.exit(2)
@@ -199,6 +204,8 @@ for opt, arg in opts:
                 nbin = int(arg)
             elif opt in ("-z", "--size"):
                 size = int(arg)
+            elif opt in ("-b", "--move_average"):
+                move_average = int(arg)
 
 
 
@@ -221,7 +228,7 @@ class plotly_go():
     average_value = []
     multi_flag = ''
 
-    def __init__(self,file1, file2, file3, output_name, renumber, ave, xaxis_name, yaxis_name, rdf_cutoff, multi_files, plot_name, pca, nbin, size):
+    def __init__(self,file1, file2, file3, output_name, renumber, ave, xaxis_name, yaxis_name, rdf_cutoff, multi_files, plot_name, pca, nbin, size, move_average):
         # if multi_files == 0:
         #     self.flag_recognizer(file1, file2, file3)
         #     if self.flag == 'rmsd':
@@ -248,11 +255,11 @@ class plotly_go():
             file1 = multi_files[0]
             self.flag_recognizer(file1, file2, file3)
             if self.pca_flag != 1 and self.flag != 'pca':
-                self.plotly_multy(self.flag, multi_files, xaxis_name, yaxis_name, renumber, ave, output_name, rdf_cutoff, plot_name)
+                self.plotly_multy(self.flag, multi_files, xaxis_name, yaxis_name, renumber, ave, output_name, rdf_cutoff, plot_name, move_average)
             elif self.pca_flag == 1:
-                self.plotly_pca(multi_files, xaxis_name, yaxis_name, renumber, ave, output_name, rdf_cutoff, plot_name, nbin, size)
+                self.plotly_pca(multi_files, xaxis_name, yaxis_name, renumber, ave, output_name, rdf_cutoff, plot_name, nbin, size, move_average)
             elif self.flag == 'pca':
-                self.plotly_pca(multi_files, xaxis_name, yaxis_name, renumber, ave, output_name, rdf_cutoff, plot_name, nbin, size)
+                self.plotly_pca(multi_files, xaxis_name, yaxis_name, renumber, ave, output_name, rdf_cutoff, plot_name, nbin, size, move_average)
 
 
 
@@ -913,7 +920,7 @@ class plotly_go():
     #             pass
 
 
-    def plotly_multy(self, flag, multi_files, xaxis_name, yaxis_name, renumber, ave, output_file_name, rdf_cutoff, plot_name):
+    def plotly_multy(self, flag, multi_files, xaxis_name, yaxis_name, renumber, ave, output_file_name, rdf_cutoff, plot_name, move_average):
         Plotly = ['#636EFA', '#EF553B', '#00CC96', '#AB63FA', '#FFA15A', '#19D3F3', '#FF6692', '#B6E880', '#FF97FF', '#FECB52']
         a=1
         data = []
@@ -987,6 +994,7 @@ class plotly_go():
         if x_name == 'Time (ps)':
             x_name = 'Time (ns)'
 
+
         ################## plot the datas ##################
         layout = go.Layout(title=plot_title, title_x=0.5, title_y=1, font=dict(size=24),
                            xaxis=dict(title=x_name, titlefont=dict(size=40, color='black', family='Arial'), zeroline=False, autorange=True,
@@ -1058,8 +1066,46 @@ class plotly_go():
                 for num in range(len(average_value)):
                     average_line = "{}     {}\n".format(locals()["x_" + str(1)][num], average_value[num])
                     f.write(average_line)
+                    
+        ################## if user ask for movement average ##################
+        if move_average != 0:
+            ma_plot_title = plot_title + "<br><sup>Moving Average (window=" + str(move_average) + ")</sup>"
+            ma_output_file_name = "MovingAverage_" + output_file_name
+            data = []
+            # 窗口大小
+            window_size = move_average   
+            # count the number of input files
+            number = len(multi_files)
+            a = 1
+            for i in multi_files:
+                try:
+                    # 计算移动平均线
+                    moving_average = np.convolve(locals()["y_" + str(a)], np.ones(window_size) / window_size, mode='valid')
+                    locals()["moving_average_" + str(a)] =  moving_average
+                    # print(len(locals()["moving_average_" + str(a)]))  # 打印属性值
+                    # print(locals()["moving_average_" + str(a)]) # 打印属性值
 
-    def plotly_pca(self, multi_files, xaxis_name, yaxis_name, renumber, ave, output_name, rdf_cutoff, plot_name, nbin, size):
+                    # set the traces
+                    locals()["average_move_trace_" + str(a)] = go.Scatter(x=locals()["x_" + str(a)][window_size-1:], y=locals()["moving_average_" + str(a)], name=str(i).split('.')[0])
+                    data.append(locals()["average_move_trace_" + str(a)])
+                    a += 1
+                except IndexError:
+                    pass    
+            layout = go.Layout(title=ma_plot_title, title_x=0.5, title_y=0.95, font=dict(size=24),
+                               xaxis=dict(title=x_name, titlefont=dict(size=40, color='black', family='Arial'), zeroline=False, autorange=True,
+                                          showgrid=True, gridwidth=1, gridcolor='rgba(235,240,248,100)', tickfont=dict(size=30)),
+                               yaxis=dict(title=y_name, titlefont=dict(size=40, color='black', family='Arial'), zeroline=False, autorange=True,
+                                          showgrid=True, gridwidth=1, gridcolor='rgba(235,240,248,100)', tickfont=dict(size=30)),
+                               legend=dict(x=1, y=1, orientation='v', font=dict(size=30)), showlegend=True,
+                               plot_bgcolor='rgba(255, 255, 255, 0.1)',
+                               paper_bgcolor='rgba(255, 255, 255, 0.2)',
+                               width=800, height=600)
+            fig = go.Figure(data=data, layout=layout)
+            pio.write_image(fig, ma_output_file_name)
+            
+                          
+
+    def plotly_pca(self, multi_files, xaxis_name, yaxis_name, renumber, ave, output_name, rdf_cutoff, plot_name, nbin, size, move_average):
         x_points = []
         y_points = []
 
@@ -1209,4 +1255,4 @@ class plotly_go():
 
 
 
-x = plotly_go(file1,file2,file3, output_name, renumber, ave, xaxis_name, yaxis_name, rdf_cutoff, multi_files, plot_name, pca, nbin, size)
+x = plotly_go(file1,file2,file3, output_name, renumber, ave, xaxis_name, yaxis_name, rdf_cutoff, multi_files, plot_name, pca, nbin, size, move_average)
