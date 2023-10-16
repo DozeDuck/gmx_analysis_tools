@@ -979,15 +979,16 @@ class plotly_go():
                 seq1, seq2 = self.consist(locals()["x_" + str(a)])
                 if seq2 == []:
                     ################## define traces ##################
-                    locals()["trace" + str(a)] = go.Scatter(x=locals()["x_" + str(a)], y=locals()["y_" + str(a)], name=str(i).split('.')[0])
+                    locals()["trace" + str(a)] = go.Scatter(x=locals()["x_" + str(a)], y=locals()["y_" + str(a)], line=dict(color=Plotly[a-1]), name=str(i).split('.')[0])
                     data.append(locals()["trace" + str(a)])
+                    # print(Plotly[a-1])
                 else:
                     locals()["trace1" + str(a)] = go.Scatter(x=seq1, y=locals()["y_" + str(a)][:len(seq1)], line=dict(color=Plotly[a-1]), name=str(i).split('.')[0])
                     locals()["trace2" + str(a)] = go.Scatter(x=seq2, y=locals()["y_" + str(a)][-len(seq2):], line=dict(color=Plotly[a-1]), showlegend=False)
                     data.append(locals()["trace1" + str(a)])
                     data.append(locals()["trace2" + str(a)])
             else:
-                locals()["trace" + str(a)] = go.Scatter(x=locals()["x_" + str(a)], y=locals()["y_" + str(a)], name=str(i).split('.')[0])
+                locals()["trace" + str(a)] = go.Scatter(x=locals()["x_" + str(a)], y=locals()["y_" + str(a)], line=dict(color=Plotly[a-1]), name=str(i).split('.')[0])
                 data.append(locals()["trace" + str(a)])
             a += 1
         ################## test if time unit is ns, if not then change it from ps to ns ##################
