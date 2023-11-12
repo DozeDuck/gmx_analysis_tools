@@ -35,9 +35,10 @@ rscript = 0
 nbin = 500
 size = 400
 move_average = 0
+mean_value = 'fault' # flag = -d
 
 try:
-    opts, args_lala = getopt.getopt(args,"f:s:t:r:a:o:x:y:c:m:p:l:j:n:z:b:h",["file1=",
+    opts, args_lala = getopt.getopt(args,"f:s:t:r:a:o:x:y:c:m:p:l:j:n:z:b:d:h",["file1=",
                                              "file2=",
                                              "file3=",
                                              "renumber=",
@@ -53,9 +54,10 @@ try:
                                              "nbin=",
                                              "size=",
                                              "move_average=",
+                                             "mean_value=",
                                              "help"])
 except getopt.GetoptError:
-    print('Version: 1.5 \
+    print('Version: 1.6 \
           \nCurrently it works for rmsd, rmsf, sasa_time, sasa_residue, gyration, dipole movement, rdf, distance, PCA  \
           \nIt can read one, two or three same type files \
           \n-o output_name.png, suitable file format for output: png, jpg, jpeg, webp, svg, pdf, eps, json \
@@ -67,6 +69,7 @@ except getopt.GetoptError:
           \n-n represent "nbin", mainly used for pca ploting, default value=1000, the larger the smoother, however, if there is white line in your PCA_Density plot, please change the value to get a cleaner plot \
           \n-z represent "size", mainly used for pca ploting, default value=500, the larger the higher resolution, if there is white line in your PCA Density plot, please change the value to get a cleaner plot \
           \n-b the window size of moving average analysis for SASA \
+          \n-d whether user want to draw a straight line to represent the mean value for each trace. default value = fault; user can change it to true \
           \nUsage: \
           \n ./plotly_go -f <file1> -s <file2> -t <file3> -o <output_name> -r <true/fault> -a <2/3/true> -x <xaxis_name> -y <yaxis_name> -c <rdf_cutoff> -p <plot_title> \
           \n ./plotly_go -m <file1> <file2> <file3>  -o <output_name> -r <true/fault> -a <2/3/true> -x <xaxis_name> -y <yaxis_name> -c <rdf_cutoff> -p <plot_title>  \
@@ -78,14 +81,14 @@ except getopt.GetoptError:
           \n ./plotly_go -f rmsf1.xvg -s rmsf2.xvg -o rmsf12.png -a 2 \
           \n ./plotly_go -f sasa1.xvg -s sasa2.xvg -t sasa3.xvg -o sasa123.png -r true -x "Time (ns)" -y "SASA (nm<sup>2</sup>)" \
           \n ./plotly_go -f rdf1.xvg -s rdf2.xvg -t rdf3.xvg -o rdf123.png -c 4.7 -o rdf123.png \
-          \n ./plotly_go -m sasa1.xvg sasa2.xvg sasa3.xvg sasa4.xvg sasa5.xvg sasa6.xvg sasa7.xvg sasa8.xvg sasa9.xvg -o multy_sasa_9.png -a true -b 10 \
+          \n ./plotly_go -m sasa1.xvg sasa2.xvg sasa3.xvg sasa4.xvg sasa5.xvg sasa6.xvg sasa7.xvg sasa8.xvg sasa9.xvg -o multy_sasa_9.png -a true -b 10 -d true\
           \n ./plotly_go -m resarea1.xvg resarea2.xvg resarea3.xvg -o test_resare123.png -a true -r true \
           \n ./plotly_go -m 2dproj1.xvg -n 1000 -z 500 -o pca_myname.png')
     sys.exit(2)
 
 for opt, arg in opts:
     if opt == '-h':
-        print('Version: 1.5 \
+        print('Version: 1.6 \
           \nCurrently it works for rmsd, rmsf, sasa_time, sasa_residue, gyration, dipole movement, rdf, distance, PCA  \
           \nIt can read one, two or three same type files \
           \n-o output_name.png, suitable file format for output: png, jpg, jpeg, webp, svg, pdf, eps, json \
@@ -97,6 +100,7 @@ for opt, arg in opts:
           \n-n represent "nbin", mainly used for pca ploting, default value=1000, the larger the smoother, however, if there is white line in your PCA_Density plot, please change the value(-n 500) to get a cleaner plot \
           \n-z represent "size", mainly used for pca ploting, default value=500, the larger the higher resolution, if there is white line in your PCA Density plot, please change the value to get a cleaner plot \
           \n-b the window size of moving average analysis for SASA \
+          \n-d whether user want to draw a straight line to represent the mean value for each trace. default value = fault; user can change it to true \
           \nUsage: \
           \n ./plotly_go -f <file1> -s <file2> -t <file3> -o <output_name> -r <true/fault> -a <2/3/true> -x <xaxis_name> -y <yaxis_name> -c <rdf_cutoff> -p <plot_title> \
           \n ./plotly_go -m <file1> <file2> <file3>  -o <output_name> -r <true/fault> -a <2/3/true> -x <xaxis_name> -y <yaxis_name> -c <rdf_cutoff> -p <plot_title> \
@@ -107,7 +111,7 @@ for opt, arg in opts:
           \n ./plotly_go -f rmsd1.xvg -s rmsd2.xvg -t rmsd3.xvg -o rmsd123.png -a 3\
           \n ./plotly_go -f sasa1.xvg -s sasa2.xvg -t sasa3.xvg -o sasa123.png -r true -x "Time (ns)" -y "SASA (nm<sup>2</sup>)" \
           \n ./plotly_go -f rdf1.xvg -s rdf2.xvg -t rdf3.xvg -o rdf123.png -c 4.7 -o rdf123.png \
-          \n ./plotly_go -m sasa1.xvg sasa2.xvg sasa3.xvg sasa4.xvg sasa5.xvg sasa6.xvg sasa7.xvg sasa8.xvg sasa9.xvg -o multy_sasa_9.png -a true -b 10 \
+          \n ./plotly_go -m sasa1.xvg sasa2.xvg sasa3.xvg sasa4.xvg sasa5.xvg sasa6.xvg sasa7.xvg sasa8.xvg sasa9.xvg -o multy_sasa_9.png -a true -b 10 -d true\
           \n ./plotly_go -m resarea1.xvg resarea2.xvg resarea3.xvg -o test_resare123.png -a true -r true \
           \n ./plotly_go -m 2dproj1.xvg -n 1000 -z 500 -o pca_myname.png')
         sys.exit()
@@ -142,6 +146,8 @@ for opt, arg in opts:
         size = int(arg)
     elif opt in ("-b", "--move_average"):
         move_average = int(arg)
+    elif opt in ("-d", "--mean_value"):
+        mean_value = str(arg)
     elif opt in ("-m", "--multi_files"):
         value = 1
         multi_files = []
@@ -157,7 +163,7 @@ for opt, arg in opts:
         for value in multi_files:
             args.remove(value)
         try:
-            opts, args_lala = getopt.getopt(args,"f:s:t:r:a:o:x:y:c:m:p:l:j:n:z:b:h",["file1=",
+            opts, args_lala = getopt.getopt(args,"f:s:t:r:a:o:x:y:c:m:p:l:j:n:z:b:d:h",["file1=",
                                                      "file2=",
                                                      "file3=",
                                                      "renumber=",
@@ -173,6 +179,7 @@ for opt, arg in opts:
                                                      "nbin=",
                                                      "size=",
                                                      "move_average=",
+                                                     "mean_value=",
                                                      "help"])
         except getopt.GetoptError:
             sys.exit(2)
@@ -208,6 +215,8 @@ for opt, arg in opts:
                 size = int(arg)
             elif opt in ("-b", "--move_average"):
                 move_average = int(arg)
+            elif opt in ("-d", "--mean_value"):
+                mean_value = str(arg)
 
 
 
@@ -230,7 +239,7 @@ class plotly_go():
     average_value = []
     multi_flag = ''
 
-    def __init__(self,file1, file2, file3, output_name, renumber, ave, xaxis_name, yaxis_name, rdf_cutoff, multi_files, plot_name, pca, nbin, size, move_average):
+    def __init__(self,file1, file2, file3, output_name, renumber, ave, xaxis_name, yaxis_name, rdf_cutoff, multi_files, plot_name, pca, nbin, size, move_average, mean_value):
         # if multi_files == 0:
         #     self.flag_recognizer(file1, file2, file3)
         #     if self.flag == 'rmsd':
@@ -257,7 +266,7 @@ class plotly_go():
             file1 = multi_files[0]
             self.flag_recognizer(file1, file2, file3)
             if self.pca_flag != 1 and self.flag != 'pca':
-                self.plotly_multy(self.flag, multi_files, xaxis_name, yaxis_name, renumber, ave, output_name, rdf_cutoff, plot_name, move_average)
+                self.plotly_multy(self.flag, multi_files, xaxis_name, yaxis_name, renumber, ave, output_name, rdf_cutoff, plot_name, move_average, mean_value)
             elif self.pca_flag == 1:
                 self.plotly_pca(multi_files, xaxis_name, yaxis_name, renumber, ave, output_name, rdf_cutoff, plot_name, nbin, size, move_average)
             elif self.flag == 'pca':
@@ -922,7 +931,7 @@ class plotly_go():
     #             pass
 
 
-    def plotly_multy(self, flag, multi_files, xaxis_name, yaxis_name, renumber, ave, output_file_name, rdf_cutoff, plot_name, move_average):
+    def plotly_multy(self, flag, multi_files, xaxis_name, yaxis_name, renumber, ave, output_file_name, rdf_cutoff, plot_name, move_average, mean_value):
         Plotly = ['#636EFA', '#EF553B', '#00CC96', '#AB63FA', '#FFA15A', '#19D3F3', '#FF6692', '#B6E880', '#FF97FF', '#FECB52']
         a=1
         data = []
@@ -992,6 +1001,16 @@ class plotly_go():
             else:
                 locals()["trace" + str(a)] = go.Scatter(x=locals()["x_" + str(a)], y=locals()["y_" + str(a)], line=dict(color=Plotly[a-1]), name=str(i).split('.')[0])
                 data.append(locals()["trace" + str(a)])
+            
+            # add mean value straight line
+            if mean_value == "true":
+                mean_value_number = np.mean(locals()["y_" + str(a)])
+                my_list = [mean_value_number] * len(locals()["x_" + str(a)])
+                locals()["trace_mean_value" + str(a)] = go.Scatter(x=locals()["x_" + str(a)], y=my_list, line=dict(color=Plotly[a-1], dash='dash'), name='mean_value', showlegend=False)
+                data.append(locals()["trace_mean_value" + str(a)])
+            else:
+                pass
+            
             a += 1
         ################## test if time unit is ns, if not then change it from ps to ns ##################
         if x_name == 'Time (ps)':
@@ -999,6 +1018,23 @@ class plotly_go():
 
 
         ################## plot the datas ##################
+        # if mean_value == "true":
+        #     layout = go.Layout(title=plot_title, title_x=0.5, title_y=1, font=dict(size=24),
+        #                        xaxis=dict(title=x_name, titlefont=dict(size=40, color='black', family='Arial'), zeroline=False, autorange=True,
+        #                                   showgrid=True, gridwidth=1, gridcolor='rgba(235,240,248,100)', tickfont=dict(size=30)),
+        #                        yaxis=dict(title=y_name, titlefont=dict(size=40, color='black', family='Arial'), zeroline=False, autorange=True,
+        #                                   showgrid=True, gridwidth=1, gridcolor='rgba(235,240,248,100)', tickfont=dict(size=30)),
+        #                        legend=dict(x=1, y=1, orientation='v', font=dict(size=30)), showlegend=True,
+        #                        plot_bgcolor='rgba(255, 255, 255, 0.1)',
+        #                        paper_bgcolor='rgba(255, 255, 255, 0.2)',
+        #                        width=800, height=600,
+        #                        shapes=[{'type': 'line',
+        #                                 'x0': 0,
+        #                                 'y0': mean_value,
+        #                                 'x1': max(data),
+        #                                 'y1': mean_value,
+        #                                 'line': {'color': 'black', 'width': 2, 'dash': 'dashdot'}}])
+        # else:
         layout = go.Layout(title=plot_title, title_x=0.5, title_y=1, font=dict(size=24),
                            xaxis=dict(title=x_name, titlefont=dict(size=40, color='black', family='Arial'), zeroline=False, autorange=True,
                                       showgrid=True, gridwidth=1, gridcolor='rgba(235,240,248,100)', tickfont=dict(size=30)),
@@ -1008,6 +1044,7 @@ class plotly_go():
                            plot_bgcolor='rgba(255, 255, 255, 0.1)',
                            paper_bgcolor='rgba(255, 255, 255, 0.2)',
                            width=800, height=600)
+            
         fig = go.Figure(data=data, layout=layout)
         pio.write_image(fig, output_file_name)
         ################## if user ask for average the inputs ##################
@@ -1044,6 +1081,13 @@ class plotly_go():
             else:
                 trace_ave = go.Scatter(x=locals()["x_" + str(a)], y=average_value, name='Average Values')
                 data.append(trace_ave)
+            if mean_value == "true":
+                mean_value_number = np.mean(average_value)
+                my_list = [mean_value_number] * len(locals()["x_" + str(a)])
+                trace_mean_value = go.Scatter(x=locals()["x_" + str(a)], y=my_list, line=dict(color='black', dash='dash'), name='mean_value', showlegend=False)
+                data.append(locals()["trace_mean_value" + str(a)])
+            else:
+                pass
 
             
             layout = go.Layout(title=plot_title, title_x=0.5, title_y=1, font=dict(size=24),
@@ -1089,8 +1133,15 @@ class plotly_go():
                     # print(locals()["moving_average_" + str(a)]) # 打印属性值
 
                     # set the traces
-                    locals()["average_move_trace_" + str(a)] = go.Scatter(x=locals()["x_" + str(a)][window_size-1:], y=locals()["moving_average_" + str(a)], name=str(i).split('.')[0])
+                    locals()["average_move_trace_" + str(a)] = go.Scatter(x=locals()["x_" + str(a)][window_size-1:], y=locals()["moving_average_" + str(a)], line=dict(color=Plotly[a-1]), name=str(i).split('.')[0])
                     data.append(locals()["average_move_trace_" + str(a)])
+                    if mean_value == "true":
+                        mean_value_number = np.mean(locals()["moving_average_" + str(a)])
+                        my_list = [mean_value_number] * len(locals()["x_" + str(a)])
+                        trace_mean_value = go.Scatter(x=locals()["x_" + str(a)][window_size-1:], y=my_list, line=dict(color=Plotly[a-1], dash='dash'), name='mean_value', showlegend=False)
+                        data.append(locals()["trace_mean_value" + str(a)])
+                    else:
+                        pass
                     a += 1
                 except IndexError:
                     pass    
@@ -1258,4 +1309,4 @@ class plotly_go():
 
 
 
-x = plotly_go(file1,file2,file3, output_name, renumber, ave, xaxis_name, yaxis_name, rdf_cutoff, multi_files, plot_name, pca, nbin, size, move_average)
+x = plotly_go(file1,file2,file3, output_name, renumber, ave, xaxis_name, yaxis_name, rdf_cutoff, multi_files, plot_name, pca, nbin, size, move_average, mean_value)
