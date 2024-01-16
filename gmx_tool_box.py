@@ -61,7 +61,7 @@ parser.add_argument('-fm', '--font_family', default='Arial', help='Font family d
 parser.add_argument('-fc', '--font_color', default='black', help='Font color default = black')
 parser.add_argument('-gs', '--grid_show', default='True', help='Whether show the grid line, defaul = True')
 # define the parameters for metal restraints adding
-parser.add_argument('-mtgro', '--mtgros', nargs='+', required=False, default=0, help='input gro file')
+parser.add_argument('-mtgro', '--mtgros', required=False, default=0, help='input gro file')
 parser.add_argument('-mtml', '--mtmetallist', nargs='+', default=["MG","MN","ZN","CA"], help='the list of Metals,default value is MG,MN,ZN,CA')
 parser.add_argument('-mtrl', '--mtreslist', nargs='+', default=["HIS","GLU","ASP","ASN", "CYS", "LYS", "TYR"], help='the list of residues,default value is "HIS","GLU","ASP","ASN", "CYS", "LYS", "TYR"')
 parser.add_argument('-mtal', '--mtatomlist', nargs='+', default=["ND1","OE1","OE2", "OD1","OD2","ND2","SG", "NZ", "OH"], help='the list of atom name,default value is "ND1","OE1","OE2", "OD1","OD2","ND2","SG", "NZ", "OH"')
