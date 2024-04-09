@@ -24,3 +24,13 @@ install.packages("readxl")
 # 执行 R 代码
 r(r_code)
 
+如果上面的代码不行就尝试下面的：
+
+import rpy2.robjects as ro
+
+# 设置CRAN镜像
+ro.r('options(repos = c(CRAN = "http://cran.rstudio.com/"))')
+
+# 安装ggplot2包
+ro.r('install.packages("ggplot2")')
+
