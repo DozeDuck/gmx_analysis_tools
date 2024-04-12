@@ -48,7 +48,9 @@ parser = argparse.ArgumentParser(description='Version: 1.3  \n'
                                   '##################### Peptide format to ligand format #################\n' \
                                   './gmx_tool_box -plp pep.pdb -pln PEP\n' \
                                   '##################### gmx dssp ploting ###############\n' \
-                                  './gmx_tool_box -dsf dssp.dat -dst md_noPBC_dt1000.pdb -dso dssp.png -dsx false -dsc true',
+                                  './gmx_tool_box -dsf dssp.dat -dst md_noPBC_dt1000.pdb -dso dssp.png -dsx false -dsc true' \
+                                  '##################### renumber extreme1.pdb MODEL count ###############\n' \
+                                  './gmx_tool_box -rnf extreme1.pdb',
                                  formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('-m', '--multi_files', nargs='+', required=False, default=[0], help='input gro file')
 parser.add_argument('-o', '--output_name', default='lack-of-name.png', help='output_name.png, suitable file format for output: png, jpg, jpeg, webp, svg, pdf, eps, json')
@@ -98,10 +100,12 @@ parser.add_argument('-plp', '--pl_pdb', required=False, default=0, help='The pep
 parser.add_argument('-pln', '--pl_name', required=False, default='PEP', help='The resname for peptide after converting to ligand')
 # define the parameter for gmx dssp anaysis, usage: python gmx_tool_box.py -dsf dssp.dat -dst md_noPBC_dt1000.pdb -dso dssp.png -dsx false -dsc true
 parser.add_argument('-dsf', '--ds_dat', required=False, default=0, help='input dssp.dat file')
-parser.add_argument('-dst', '--ds_traj', required=True, default='md_noPBC_dt1000.pdb', help='the traj  file')
+parser.add_argument('-dst', '--ds_traj', required=False, default='md_noPBC_dt1000.pdb', help='the traj  file')
 parser.add_argument('-dso', '--ds_output', required=False, default='dssp.png', help='output name')
 parser.add_argument('-dsx', '--ds_original', required=False, default='false', help='whether use original structure types')
 parser.add_argument('-dsc', '--ds_color', required=False, default='true', help='whether generate a unique color bar')
+# define the parameer for renumber the MODEL count in extrem1.pdb 
+parser.add_argument('-rnf',  '--rn_file', required=False, default=0, help='input extreme1.pdb file')
 
 
 args = parser.parse_args()
@@ -159,6 +163,8 @@ ds_traj = args.ds_traj
 ds_output = args.ds_output
 ds_original = args.ds_original
 ds_color = args.ds_color
+# define the parameter for renumber the MODEL count in extreme1.pdb
+rn_file = args.rn_file
 
 class plotly_go():
     flag = ''
@@ -977,7 +983,7 @@ class pep2lig():
                                              self.Atomtype_per_atom[i]), file = f )         # %12s, right-aligned, the output occupies a total of 12 columns, if it is less than 12 columns, it will be filled with spaces from the left end
         print("END", file = f)
         f.close()
-
+##########################################################################################################################################################################################
 class gmx_dssp():
     def __init__(self, ds_data, ds_traj, ds_output_name, ds_original, ds_color):
         self.plot_figure(ds_data, ds_traj, ds_output_name, ds_original, ds_color)
@@ -1090,7 +1096,26 @@ class gmx_dssp():
 
         # 显示热图
         pio.write_image(fig, outputname)
+##########################################################################################################################################################################################
+class renumber_MODEL():
+    def __init__(self, files):
+        # 初始化计数器
+        count = 1
+        
+        # 打开输入文件和输出文件
+        with open(files, 'r') as file, open(f'renumbered_{files}', 'w') as output:
+            # 遍历文件中的每一行
+            for line in file:
+                # 使用正则表达式检查行是否包含"MODEL"和后面的数字
+                if re.match(r"^\s*MODEL\s+\d+", line):
+                    # 替换匹配的行为"MODEL"后面接计数器的值，并将计数器加一
+                    new_line = re.sub(r"^\s*MODEL\s+\d+", f"MODEL        {count}", line)
+                    count += 1
+                    output.write(new_line)
+                else:
+                    output.write(line)
 
+        
 ##########################################################################################################################################################################################
 
 if multi_files[0] != 0:
@@ -1105,5 +1130,7 @@ elif pl_pdb != 0:
     x = pep2lig(pl_pdb, pl_name)
 elif ds_dssp != 0:
     x = gmx_dssp(ds_dssp, ds_traj, ds_output, ds_original, ds_color)
+elif rn_file !=0:
+    renumber_MODEL(rn_file)
 
 
