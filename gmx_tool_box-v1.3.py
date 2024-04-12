@@ -45,7 +45,8 @@ parser = argparse.ArgumentParser(description='Version: 1.3  \n'
                                   './gmx_tool_box -gmgro rec.gro -gmlgro lig_GMX.gro -gmlitp lig_GMX.itp -gmtop topol.top \n'\
                                   '##################### Contact map detection ####################### \n' \
                                   './gmx_tool_box -cmp md_noPBC.pdb -cmf md_noPBC.pdb -cml LIG -cmo contact.png -cmd 3.5 \n' \
-                                  './gmx_tool_box -plp pep.pdb -pln PEP'
+                                  '##################### Peptide format to ligand format #################\n' \
+                                  './gmx_tool_box -plp pep.pdb -pln PEP\n' \
                                   '##################### gmx dssp ploting ###############\n' \
                                   './gmx_tool_box -dsf dssp.dat -dst md_noPBC_dt1000.pdb -dso dssp.png -dsx false -dsc true',
                                  formatter_class=argparse.RawTextHelpFormatter)
