@@ -48,7 +48,7 @@ parser = argparse.ArgumentParser(description='Version: 1.3  \n'
                                   '##################### Peptide format to ligand format #################\n' \
                                   './gmx_tool_box -plp pep.pdb -pln PEP\n' \
                                   '##################### gmx dssp ploting ###############\n' \
-                                  './gmx_tool_box -dsf dssp.dat -dst md_noPBC_dt1000.pdb -dso dssp.png -dsx false -dsc true' \
+                                  './gmx_tool_box -dsf dssp.dat -dst md_noPBC_dt1000.pdb -dso dssp.png -dsx false -dsc true\n' \
                                   '##################### renumber extreme1.pdb MODEL count ###############\n' \
                                   './gmx_tool_box -rnf extreme1.pdb',
                                  formatter_class=argparse.RawTextHelpFormatter)
@@ -997,7 +997,7 @@ class gmx_dssp():
         residues = [res.resname + str(res.resid) for res in u.residues]
         return times, residues
         
-    def read_data(self, data, traj, original): 
+    def read_data(self, data, traj, original, unique_color_bar): 
         times, residues = self.read_time_and_residue(traj)
         # 读取DSSP数据（dssp.dat）
         with open(data, "r") as file:
@@ -1009,7 +1009,7 @@ class gmx_dssp():
         # 创建DataFrame
         df = pd.DataFrame(data=dssp_data, index=times, columns=residues)
         
-        if original == 'false' :
+        if original == 'false' and unique_color_bar == 'true':
             # times = times.append(times[-1]+1) # for scale the color
             # Calculate the length of each third
             third_length = len(df.columns) // 3
@@ -1019,7 +1019,21 @@ class gmx_dssp():
             
             # Append the new row at the bottom of the DataFrame
             df.loc[len(df)] = new_row
-        else:
+        elif original != 'false' and unique_color_bar == 'true':
+            tenth_length = len(df.columns) // 10
+            # Initialize an empty list for the new row
+            new_row = []
+            # Create new row by appending numbers from 1 to 10, each repeated 'tenth_length' times
+            # Note that the last segment fills the remainder of the row if it's not evenly divisible by 10
+            for i in range(10):
+                if i < 9:
+                    new_row += [i] * tenth_length
+                else:
+                    # The last segment includes any extra columns
+                    new_row += [i] * (len(df.columns) - len(new_row))
+
+            # Append the new row at the bottom of the DataFrame
+            df.loc[len(df)] = new_row
             pass
         
         return df
@@ -1055,7 +1069,7 @@ class gmx_dssp():
         return structure_values
 
     def plot_figure(self, data, traj, outputname, original, color):
-        df = self.read_data(data, traj, original)
+        df = self.read_data(data, traj, original,color)
         structure_values = self.replace_letters(original)    
         # 使用字典转换DataFrame中的值
         df.replace(structure_values, inplace=True)
@@ -1066,8 +1080,12 @@ class gmx_dssp():
         colorscale = [[0.00, "gold"],   [0.33, "gold"], [0.33, "mediumturquoise"], [0.66, "mediumturquoise"], [0.66, "lightsalmon"],  [1.00, "lightsalmon"]]
         # colorscale = [[0.00, "red"],   [0.33, "red"], [0.33, "green"], [0.66, "green"], [0.66, "blue"],  [1.00, "blue"]]
         # 将颜色条的刻度设置为固定的值
-        colorbar_ticks = [1, 2, 3]  # The actual values in your data
-        colorbar_ticktext = ['loop', 'helix', 'beta sheet']  # Descriptive labels
+        if original == 'false':
+            colorbar_ticks = [1, 2, 3]  # The actual values in your data
+            colorbar_ticktext = ['loop', 'helix', 'beta sheet']  # Descriptive labels
+        elif original != 'false':
+            colorbar_ticks = [0,1,2,3,4,5,6,7,8,9]
+            colorbar_ticktext = ['loop', 'break', 'h-bond turn', 'bend', 'kappa helix', 'pi helix', '3_10 helix', 'strand', 'beta bridge', 'a-helix']
         if original != 'false':
             # 创建热图
             fig = go.Figure(data=go.Heatmap(
@@ -1075,7 +1093,7 @@ class gmx_dssp():
                 x=df.index,
                 y=df.columns,
                 # colorscale=colorscale,
-                # colorbar=dict(title = 'type', titleside = 'top', tickmode = 'array', tickvals=colorbar_tickvals, ticktext=colorbar_ticktext),
+                colorbar=dict(tickmode = 'array', tickvals=colorbar_ticks, ticktext=colorbar_ticktext),
                 hoverongaps=False))
         elif original == 'false':
             # 创建热图
