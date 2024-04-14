@@ -996,12 +996,26 @@ class gmx_dssp():
         times = [ts.time for ts in u.trajectory]  # 假设时间单位是ns 
         residues = [res.resname + str(res.resid) for res in u.residues]
         return times, residues
+ 
+    def detect_break(self, first_line, residue_list):
+        # Find the positions of '=' in the first line
+        equal_positions = [pos for pos, char in enumerate(first_line) if char == "="]
+        print("Here is the break points ", equal_positions)
+        # Sort the positions in reverse order
+        equal_positions.sort(reverse=True)
+        # Insert 'break' into the residue_list at the corresponding positions from the end
+        for pos in equal_positions:
+            if pos < len(residue_list):  # Only insert if the position is within the bounds of the residue_list
+                residue_list.insert(pos, 'break')
+        return residue_list
         
     def read_data(self, data, traj, original, unique_color_bar): 
         times, residues = self.read_time_and_residue(traj)
         # 读取DSSP数据（dssp.dat）
         with open(data, "r") as file:
             dssp_lines = file.readlines()
+            first_line = dssp_lines[0]
+            residues = self.detect_break(first_line, residues)
     
         # 转换DSSP数据为列表
         dssp_data = [list(line.strip()) for line in dssp_lines]
