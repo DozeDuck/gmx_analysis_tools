@@ -1000,7 +1000,6 @@ class gmx_dssp():
     def detect_break(self, first_line, residue_list):
         # Find the positions of '=' in the first line
         equal_positions = [pos for pos, char in enumerate(first_line) if char == "="]
-        print("Here is the break points ", equal_positions)
         # Sort the positions in reverse order
         equal_positions.sort(reverse=True)
         # Insert 'break' into the residue_list at the corresponding positions from the end
@@ -1092,6 +1091,7 @@ class gmx_dssp():
         # Define color scale and color bar settings
         colorscale = [[0, 'red'], [0.5, 'green'], [1.0, 'rgb(0, 0, 255)']]
         colorscale = [[0.00, "gold"],   [0.33, "gold"], [0.33, "mediumturquoise"], [0.66, "mediumturquoise"], [0.66, "lightsalmon"],  [1.00, "lightsalmon"]]
+        original_colorscale = [[0.0, "#636EFA"], [0.1, "#636EFA"], [0.1, "#EF553B"], [0.2, "#EF553B"], [0.2, "#00CC96"], [0.3, "#00CC96"], [0.3, "#AB63FA"], [0.4, "#AB63FA"], [0.4, "#FFA15A"], [0.5, "#FFA15A"], [0.5, "#19D3F3"], [0.6, "#19D3F3"], [0.6, "#FF6692"], [0.7, "#FF6692"], [0.7, "#B6E880"], [0.8, "#B6E880"], [0.8, "#FF97FF"], [0.9, "#FF97FF"], [0.9, "#FECB52"], [1.0, "#FECB52"]]
         # colorscale = [[0.00, "red"],   [0.33, "red"], [0.33, "green"], [0.66, "green"], [0.66, "blue"],  [1.00, "blue"]]
         # 将颜色条的刻度设置为固定的值
         if original == 'false':
@@ -1106,7 +1106,7 @@ class gmx_dssp():
                 z=df.T.values,
                 x=df.index,
                 y=df.columns,
-                # colorscale=colorscale,
+                colorscale=original_colorscale,
                 colorbar=dict(tickmode = 'array', tickvals=colorbar_ticks, ticktext=colorbar_ticktext),
                 hoverongaps=False))
         elif original == 'false':
