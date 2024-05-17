@@ -696,7 +696,7 @@ class plotly_go():
                 free_energy_grid = z_data_array.reshape(len(y_values), len(x_values))
                 # Plot the FES
                 plt.contourf(x_grid, y_grid, free_energy_grid, levels=100)
-                if xaxis_name == 'auto detect' and yaxis_name == 'auto detect':
+                if xaxis_name == '0' and yaxis_name == '0':
                     xaxis_name = column_names[0]
                     yaxis_name = column_names[1]
                     plt.xlabel(xaxis_name)
